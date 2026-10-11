@@ -69,6 +69,7 @@
 
   .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); }
   .logo em { font-style: italic; color: var(--accent1); }
+  .how-to { font-size: 12px; line-height: 1.7; color: var(--muted2); margin: -24px 0 32px; }
   .date-stamp { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
 
   .progress-section { display: flex; align-items: center; gap: 32px; margin-bottom: 32px; }
@@ -248,6 +249,8 @@
     <div class="date-stamp" id="date-stamp"></div>
   </header>
 
+  <p class="how-to">Turn your sound on and start typing below. Each time you press Enter to finish a paragraph, you'll hear music matched to its mood — write three to complete your morning.</p>
+
   <div class="progress-section">
     <div class="ring-wrap">
       <svg class="ring-svg" viewBox="0 0 88 88">
@@ -372,7 +375,7 @@
 
   <div class="editor-wrap">
     <textarea id="writer"
-      placeholder="Begin here. Press Enter twice to complete a paragraph..."
+      placeholder="Begin here. Press Enter to complete a paragraph..."
       spellcheck="true" autocomplete="off"
     ></textarea>
     <div class="corner tl"></div>
@@ -531,7 +534,7 @@ function getChain(c) {
   const conv = c.createConvolver();
   conv.buffer = buildCathedralReverb(c);
   const reverbGain = c.createGain();
-  reverbGain.gain.value = 0.88;             // cathedral wet mix — wetter
+  reverbGain.gain.value = 1.76;             // cathedral wet mix — doubled
 
   // Delay (dotted-eighth at tempo 72 ≈ 416ms, scaled per mood)
   const delay = c.createDelay(2.0);
@@ -580,7 +583,12 @@ function getChain(c) {
 
   dry.connect(master);
   reverbGain.connect(master);
-  master.connect(c.destination);
+  // Limiter — keeps the doubled reverb from clipping
+  const limiter = c.createDynamicsCompressor();
+  limiter.threshold.value = -6; limiter.knee.value = 6; limiter.ratio.value = 12;
+  limiter.attack.value = 0.003; limiter.release.value = 0.25;
+  master.connect(limiter);
+  limiter.connect(c.destination);
 
   _chain = { ctx: c, bus, delay, dry, reverbGain, master };
   return _chain;
@@ -993,8 +1001,9 @@ async function triggerReward(paraText, index) {
 }
 
 // ─── Paragraph detection ──────────────────────────────────────────────────────
+// A paragraph is complete once a non-blank line is followed by Enter.
 function getLatestPara(text) {
-  return text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).slice(-1)[0] || text;
+  return text.split('\n').slice(0, -1).map(p => p.trim()).filter(Boolean).slice(-1)[0] || text;
 }
 
 document.getElementById('writer').addEventListener('keydown', () => ctx());
@@ -1002,7 +1011,7 @@ document.getElementById('writer').addEventListener('input', () => {
   const text = document.getElementById('writer').value;
   const words = text.trim().split(/\s+/).filter(Boolean).length;
   document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
-  const doubles = (text.match(/\n\s*\n/g) || []).length;
+  const doubles = (text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
   document.getElementById('para-count-meta').textContent = doubles + ' paragraph' + (doubles!==1?'s':'') + ' detected';
   if (doubles > lastNewlineCount && completedCount < GOAL) {
     lastNewlineCount = doubles;
