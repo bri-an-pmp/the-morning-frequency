@@ -62,7 +62,8 @@ body::before {
   z-index: 1;
   width: 100%;
   max-width: 760px;
-  padding: 60px 32px 80px;
+  /* env(safe-area-inset-*) keeps content clear of the notch / Dynamic Island and home bar */
+  padding: calc(60px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
 }
@@ -273,7 +274,7 @@ textarea:focus ~ .corner { opacity: 0.9; }
 footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.7); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; display: flex; justify-content: space-between; }
 
 @media (max-width: 600px) {
-  .container { padding: 36px 16px 60px; }
+  .container { padding: calc(28px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
   header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .settings-panel.open { grid-template-columns: minmax(0, 1fr); }
   textarea { min-height: 240px; padding: 22px 20px; }

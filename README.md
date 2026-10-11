@@ -27,11 +27,11 @@ When you finish a session, the app builds your files in the browser. It turns yo
 
 ## Tech Stack
 
-Plain HTML, CSS and JavaScript (no framework, no build step), the Web Audio API for music and audio rendering, the Anthropic API (optional) for mood analysis, docx and jsPDF for the Word and PDF downloads, the Web Share API for saving to the cloud, Google Fonts (DM Serif Display, DM Mono, Nunito), and GitHub Pages for hosting.
+Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the iPhone app, the Web Audio API for music and audio rendering, the Anthropic API (optional) for mood analysis, docx and jsPDF for the Word and PDF downloads, the Web Share API for saving to the cloud, self-hosted fonts (DM Serif Display, DM Mono, Nunito), and GitHub Pages for hosting.
 
 ## Project Structure
 
-index.html is the whole app: the page layout, the sky-themed design, the music engine, mood detection and the downloads. README.md is this file.
+index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
 ## Privacy
 
@@ -39,8 +39,8 @@ Your writing stays in your browser and is never stored on a server. If you add a
 
 ## Setup
 
-No install is needed. To run it locally, download index.html and open it in any modern browser. Mood detection works without a key; for Claude-powered mood detection, paste your Anthropic API key under *music settings* and click save.
+Install Node.js 22, then run npm install. Use npm run dev to work on the site locally, and npm run build to create the production files in dist/. For the iPhone app (Xcode required), run npm run ios to copy the latest build into the iOS project, then open ios/App/App.xcodeproj in Xcode. Mood detection works without a key; for Claude-powered mood detection, paste your Anthropic API key under *music settings* and click save.
 
 ## Deployment
 
-This project is deployed with GitHub Pages (https://bri-an-pmp.github.io/the-morning-frequency/) from the main branch, root folder. To host your own copy, fork the repo and turn on Pages under Settings → Pages.
+The website is deployed to GitHub Pages (https://bri-an-pmp.github.io/the-morning-frequency/) by a GitHub Actions workflow that builds the site on every push to main. To host your own copy, fork the repo and set Settings → Pages → Source to GitHub Actions. The iPhone app is in progress for the Apple App Store.
