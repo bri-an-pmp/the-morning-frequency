@@ -237,6 +237,15 @@
 
   .reset-btn { margin-top: 20px; background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px; cursor: pointer; transition: border-color .2s, color .2s; display: block; margin-left: auto; }
   .reset-btn:hover { border-color: var(--muted); color: var(--text); }
+  .session-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .session-actions .reset-btn { margin: 0; }
+  .finish-btn { border-color: var(--accent1); color: var(--text); }
+  .finish-panel { display: none; margin-top: 20px; padding: 20px 24px; border: 1px solid var(--border); background: var(--surface); text-align: center; }
+  .finish-panel.show { display: block; animation: slideUp .4s ease; }
+  .finish-title { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 6px; }
+  .finish-sub { font-size: 12px; color: var(--muted2); margin-bottom: 16px; }
+  .finish-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .finish-buttons .reset-btn { margin: 0; }
 
   footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: #333; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
 </style>
@@ -394,7 +403,19 @@
     <div class="goal-banner-sub">3 paragraphs written. Keep going or come back tomorrow.</div>
   </div>
 
-  <button class="reset-btn" id="reset-btn">reset session</button>
+  <div class="session-actions">
+    <button class="reset-btn" id="reset-btn">reset session</button>
+    <button class="reset-btn finish-btn" id="finish-btn">finish session</button>
+  </div>
+
+  <div class="finish-panel" id="finish-panel">
+    <div class="finish-title">Session finished.</div>
+    <div class="finish-sub" id="finish-sub">Download your writing to keep it.</div>
+    <div class="finish-buttons">
+      <button class="reset-btn" id="download-docx">download word (.docx)</button>
+      <button class="reset-btn" id="download-pdf">download pdf</button>
+    </div>
+  </div>
 
   <footer>
     <span>the morning frequency — v1.0</span>
@@ -1066,7 +1087,101 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   document.getElementById('word-count').textContent = '0 words';
   document.getElementById('para-count-meta').textContent = '0 paragraphs detected';
   document.getElementById('goal-banner').classList.remove('show');
+  document.getElementById('finish-panel').classList.remove('show');
   document.getElementById('writer').focus();
+});
+
+// ─── Finish session + download ────────────────────────────────────────────────
+function sessionParagraphs() {
+  return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
+}
+
+function sessionDate() {
+  return new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function sessionFilename(ext) {
+  const d = new Date();
+  const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  return 'the-morning-frequency-' + iso + '.' + ext;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error('Could not load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function downloadDocx() {
+  if (!window.docx) await loadScript('https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js');
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+  const doc = new Document({ sections: [{ children: [
+    new Paragraph({ text: 'The Morning Frequency', heading: HeadingLevel.TITLE }),
+    new Paragraph({ children: [new TextRun({ text: sessionDate(), italics: true, color: '666666' })], spacing: { after: 360 } }),
+    ...sessionParagraphs().map(t => new Paragraph({ children: [new TextRun({ text: t, size: 24 })], spacing: { after: 240, line: 360 } }))
+  ]}]});
+  saveBlob(await Packer.toBlob(doc), sessionFilename('docx'));
+}
+
+async function downloadPdf() {
+  if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+  const margin = 72, width = pdf.internal.pageSize.getWidth() - margin * 2;
+  const bottom = pdf.internal.pageSize.getHeight() - margin;
+  let y = margin;
+  pdf.setFont('times', 'normal'); pdf.setFontSize(24);
+  pdf.text('The Morning Frequency', margin, y); y += 24;
+  pdf.setFont('times', 'italic'); pdf.setFontSize(12); pdf.setTextColor(102);
+  pdf.text(sessionDate(), margin, y); y += 36;
+  pdf.setFont('times', 'normal'); pdf.setTextColor(0);
+  const lineH = 18;
+  sessionParagraphs().forEach(t => {
+    pdf.splitTextToSize(t, width).forEach(line => {
+      if (y > bottom) { pdf.addPage(); y = margin; }
+      pdf.text(line, margin, y); y += lineH;
+    });
+    y += lineH * 0.75;
+  });
+  pdf.save(sessionFilename('pdf'));
+}
+
+function wireDownload(id, fn) {
+  const btn = document.getElementById(id);
+  btn.addEventListener('click', async () => {
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'preparing...';
+    try { await fn(); }
+    catch (e) { alert('Download failed — check your internet connection and try again.'); }
+    finally { btn.disabled = false; btn.textContent = label; }
+  });
+}
+wireDownload('download-docx', downloadDocx);
+wireDownload('download-pdf', downloadPdf);
+
+document.getElementById('finish-btn').addEventListener('click', () => {
+  const paras = sessionParagraphs();
+  if (!paras.length) {
+    document.getElementById('writer').focus();
+    notifTxt.textContent = 'write something first, then finish your session';
+    return;
+  }
+  const words = paras.join(' ').split(/\s+/).filter(Boolean).length;
+  document.getElementById('finish-sub').textContent =
+    paras.length + ' paragraph' + (paras.length!==1?'s':'') + ', ' + words + ' word' + (words!==1?'s':'') + ' — download your writing to keep it.';
+  const panel = document.getElementById('finish-panel');
+  panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 
 document.getElementById('writer').focus();
