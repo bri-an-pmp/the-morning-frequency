@@ -258,7 +258,7 @@
     <div class="date-stamp" id="date-stamp"></div>
   </header>
 
-  <p class="how-to">Turn your sound on and start typing below. Each time you press Enter to finish a paragraph, you'll hear music matched to its mood — write three to complete your morning.</p>
+  <p class="how-to">Turn your sound on and type below — a paragraph is anything you write before pressing Enter, any length, even one word. Every press of Enter plays music matched to your mood, and three paragraphs complete your morning.</p>
 
   <div class="progress-section">
     <div class="ring-wrap">
@@ -427,7 +427,6 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 let audioCtx = null;
 let completedCount = 0;
-let lastNewlineCount = 0;
 let isManualOverride = false;
 let manualMood = null;
 let apiKey = localStorage.getItem('pm_api_key') || '';
@@ -480,7 +479,7 @@ function getTexture(p) {
 // ── Cathedral reverb IR — longer tail, denser early reflections ───────────────
 function buildCathedralReverb(c) {
   const sr = c.sampleRate;
-  const decay = 4.8;                        // seconds — proper cathedral length
+  const decay = 7.0;                        // seconds — long, atmospheric tail
   const preDelay = 0.028;
   const len = Math.ceil(sr * (decay + preDelay + 0.2));
   const ir = c.createBuffer(2, len, sr);
@@ -555,21 +554,21 @@ function getChain(c) {
   const conv = c.createConvolver();
   conv.buffer = buildCathedralReverb(c);
   const reverbGain = c.createGain();
-  reverbGain.gain.value = 1.76;             // cathedral wet mix — doubled
+  reverbGain.gain.value = 2.2;              // cathedral wet mix — very wet
 
   // Delay (dotted-eighth at tempo 72 ≈ 416ms, scaled per mood)
   const delay = c.createDelay(2.0);
   delay.delayTime.value = 0.38;             // updated per-chord in playMoodMusic
   const delayFB = c.createGain();
-  delayFB.gain.value = 0.44;               // feedback — three echoes before silence
+  delayFB.gain.value = 0.6;                // feedback — long trail of echoes
   const delayLP = c.createBiquadFilter();  // tame harsh delay repeats
   delayLP.type = 'lowpass'; delayLP.frequency.value = 3200;
   const delayGain = c.createGain();
-  delayGain.gain.value = 0.38;             // delay send level — more present
+  delayGain.gain.value = 0.6;              // delay send level — atmospheric
 
   // Dry path
   const dry = c.createGain();
-  dry.gain.value = 0.55;
+  dry.gain.value = 0.45;                   // less dry so the space comes forward
 
   const master = c.createGain();
   master.gain.value = 0.72;
@@ -781,7 +780,7 @@ function playMoodMusic(profile, paraIndex) {
   // ── Master fade-out: longer tail — 3.8s dissolve into reverb ────────────
   const chordDur = 4.0 + (1 - profile.energy) * 2.0;
   const fadeOutStart = T + chordDur - 0.2;
-  const fadeOutEnd   = T + chordDur + 3.8;
+  const fadeOutEnd   = T + chordDur + 6.5;   // long enough to hear the reverb + echo tail
   chain.master.gain.cancelScheduledValues(T);
   chain.master.gain.setValueAtTime(0.88, T);
   chain.master.gain.setValueAtTime(0.88, fadeOutStart);
@@ -982,7 +981,8 @@ function setWave(color, on) {
 }
 
 // ─── Reward trigger ───────────────────────────────────────────────────────────
-async function triggerReward(paraText, index) {
+// index: paragraph number toward the goal (null for an Enter on a blank line)
+async function triggerReward(paraText, index, playIndex) {
   ctx(); // wake audio context
   showAnalyzing(true);
 
@@ -991,25 +991,29 @@ async function triggerReward(paraText, index) {
     const p = MOODS[manualMood];
     moodData = { mood:manualMood, energy:p.energy, valence:p.valence, reason:'manual' };
   } else {
-    moodData = await analyzeMood(paraText);
+    moodData = paraText ? await analyzeMood(paraText) : { mood:'neutral', energy:MOODS.neutral.energy, valence:MOODS.neutral.valence, reason:'blank line' };
   }
 
   const profile = MOODS[moodData.mood] || MOODS.neutral;
   showMoodResult(moodData);
 
-  pips[index].classList.add(pipCls[index]);
-  updateRing(index + 1);
+  const onGoal = index !== null && index < GOAL;
+  if (onGoal) {
+    pips[index].classList.add(pipCls[index]);
+    updateRing(index + 1);
+  }
 
   notifEl.className = 'notif playing';
   notifEl.style.setProperty('--notif-color', profile.color);
   setWave(profile.color, true);
 
   const msgs = ['♩ paragraph 1 unlocked','♩♩ paragraph 2 unlocked','♩♩♩ morning complete'];
-  notifTxt.textContent = msgs[index];
+  notifTxt.textContent = onGoal ? msgs[index] : (index === null ? '♩ new line' : `♩ paragraph ${index+1}`);
   const titles = ['First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
-  document.getElementById('progress-title').textContent = titles[index];
+  if (onGoal) document.getElementById('progress-title').textContent = titles[index];
 
-  playMoodMusic(profile, index);
+  // Paragraph 3 gets the finale; everything else cycles through the regular voicings
+  playMoodMusic(profile, index === 2 ? 2 : (playIndex % 3 === 2 ? 3 : playIndex % 3));
 
   if (index === 2) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
 
@@ -1017,27 +1021,32 @@ async function triggerReward(paraText, index) {
   setTimeout(() => {
     setWave(profile.color, false);
     notifEl.classList.remove('playing');
-    notifTxt.textContent = index < 2 ? `paragraph ${index+1} done — ${GOAL-index-1} to go` : 'goal reached — well done';
+    notifTxt.textContent = completedCount < GOAL
+      ? (completedCount === 0 ? 'waiting for your first paragraph...' : `paragraph ${completedCount} done — ${GOAL-completedCount} to go`)
+      : (completedCount === GOAL ? 'goal reached — well done' : `${completedCount} paragraphs — keep going`);
   }, dur);
 }
 
 // ─── Paragraph detection ──────────────────────────────────────────────────────
-// A paragraph is complete once a non-blank line is followed by Enter.
-function getLatestPara(text) {
-  return text.split('\n').slice(0, -1).map(p => p.trim()).filter(Boolean).slice(-1)[0] || text;
-}
-
 document.getElementById('writer').addEventListener('keydown', () => ctx());
-document.getElementById('writer').addEventListener('input', () => {
-  const text = document.getElementById('writer').value;
+// Every Enter plays music. Enter after a line with text also counts toward the goal.
+let enterCount = 0;
+document.getElementById('writer').addEventListener('input', (e) => {
+  const el = document.getElementById('writer');
+  const text = el.value;
   const words = text.trim().split(/\s+/).filter(Boolean).length;
   document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
-  const doubles = (text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
-  document.getElementById('para-count-meta').textContent = doubles + ' paragraph' + (doubles!==1?'s':'') + ' detected';
-  if (doubles > lastNewlineCount && completedCount < GOAL) {
-    lastNewlineCount = doubles;
-    triggerReward(getLatestPara(text), completedCount);
+  const paras = (text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
+  document.getElementById('para-count-meta').textContent = paras + ' paragraph' + (paras!==1?'s':'') + ' detected';
+  if (e.inputType !== 'insertLineBreak' && e.inputType !== 'insertParagraph') return;
+  const before = text.slice(0, el.selectionStart).split('\n').slice(0, -1);
+  const justFinished = (before[before.length - 1] || '').trim();
+  const latest = before.map(l => l.trim()).filter(Boolean).slice(-1)[0] || '';
+  if (justFinished) {
+    triggerReward(justFinished, completedCount, enterCount++);
     completedCount++;
+  } else {
+    triggerReward(latest, null, enterCount++);
   }
 });
 
@@ -1074,7 +1083,7 @@ function selectMood(btn) {
 // ─── Reset ────────────────────────────────────────────────────────────────────
 document.getElementById('reset-btn').addEventListener('click', () => {
   document.getElementById('writer').value = '';
-  completedCount = 0; lastNewlineCount = 0;
+  completedCount = 0; enterCount = 0;
   countEl.textContent = '0'; ringEl.style.strokeDashoffset = '226'; ringEl.style.stroke = 'var(--accent1)';
   pips.forEach(p => { p.className = 'para-pip'; });
   setWave('var(--accent1)', false);
