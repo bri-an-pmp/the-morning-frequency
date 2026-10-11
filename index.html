@@ -15,7 +15,26 @@
 <div class="sky" aria-hidden="true">
   <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="cloud c4"></div><div class="cloud c5"></div>
 </div>
+<div class="layout">
+
+<aside class="history drawer drawer-left" id="history" aria-label="Your entries">
+  <div class="history-head">
+    <span class="panel-title">Your entries</span>
+    <button class="new-entry-btn" id="new-entry-btn" type="button">+ new entry</button>
+  </div>
+  <nav class="history-list" id="history-list"></nav>
+</aside>
+
 <div class="container">
+
+  <div class="topbar">
+    <button class="icon-btn" id="open-history" type="button" aria-label="Show your entries" aria-controls="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="open-calendar" type="button" aria-label="Show calendar" aria-controls="calendar-panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
 
   <header>
     <div class="logo">the morning <em>frequency</em></div>
@@ -168,7 +187,7 @@
   </div>
 
   <div class="session-actions">
-    <button class="reset-btn" id="reset-btn">reset session</button>
+    <button class="reset-btn" id="reset-btn">new entry</button>
     <button class="reset-btn finish-btn" id="finish-btn">finish session</button>
   </div>
 
@@ -194,6 +213,15 @@
     <span>github.com/bri-an-pmp/the-morning-frequency</span>
   </footer>
 
+</div>
+
+<aside class="calendar-panel drawer drawer-right" id="calendar-panel" aria-label="Calendar">
+  <div class="panel-title">Calendar</div>
+  <div id="calendar"></div>
+</aside>
+
+<!-- Inside .layout so it stacks below the drawers -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
 </div>
 <script type="module" src="/src/main.js"></script>
 </body>

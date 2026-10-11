@@ -11,6 +11,8 @@ import {
   sessionParagraphs, sessionFilename, saveBlob, canShareFiles,
   makeDocxBlob, makePdfBlob, makeWavBlob, shareFile,
 } from './export.js';
+import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
+import { renderHistory, renderCalendar } from './sidebar.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -25,7 +27,10 @@ if (apiKey) {
   document.getElementById('key-status').className = 'key-status ok';
 }
 
-document.getElementById('date-stamp').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+function showDate(date) {
+  document.getElementById('date-stamp').textContent = new Date(date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
+showDate(new Date());
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 const notifEl   = document.getElementById('notif');
@@ -68,6 +73,7 @@ function setWave(color, on) {
 async function triggerReward(paraText, index, playIndex) {
   ctx(); // wake audio context
   showAnalyzing(true);
+  const gen = sessionGen;
 
   let moodData;
   if (isManualOverride && manualMood) {
@@ -76,6 +82,7 @@ async function triggerReward(paraText, index, playIndex) {
   } else {
     moodData = paraText ? await analyzeMood(paraText, apiKey) : { mood:'neutral', energy:MOODS.neutral.energy, valence:MOODS.neutral.valence, reason:'blank line' };
   }
+  if (gen !== sessionGen) return;
 
   const profile = MOODS[moodData.mood] || MOODS.neutral;
   showMoodResult(moodData);
@@ -97,7 +104,7 @@ async function triggerReward(paraText, index, playIndex) {
 
   // Paragraph 3 gets the finale; everything else cycles through the regular voicings
   const musicIndex = index === 2 ? 2 : (playIndex % 3 === 2 ? 3 : playIndex % 3);
-  if (index !== null) sessionTracks[index] = { profile, musicIndex, moodData };
+  if (index !== null) { sessionTracks[index] = { profile, musicIndex, moodData }; scheduleSave(0); }
   if (onGoal) {
     pips[index].classList.add('done');
     pips[index].title = `replay paragraph ${index+1} — ${moodData.mood}`;
@@ -161,6 +168,7 @@ document.getElementById('writer').addEventListener('input', (e) => {
   const newlineTyped = e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph' ||
     (text.length === prevText.length + 1 && text[el.selectionStart - 1] === '\n');
   prevText = text;
+  scheduleSave();
   if (!newlineTyped) return;
   const before = text.slice(0, el.selectionStart).split('\n').slice(0, -1);
   const justFinished = (before[before.length - 1] || '').trim();
@@ -215,7 +223,8 @@ function selectMood(btn) {
 }
 
 // ─── Reset ────────────────────────────────────────────────────────────────────
-document.getElementById('reset-btn').addEventListener('click', () => {
+function clearSession() {
+  sessionGen++;
   document.getElementById('writer').value = '';
   completedCount = 0; enterCount = 0; sessionTracks = []; prevText = '';
   pips.forEach(p => p.removeAttribute('title'));
@@ -233,8 +242,129 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   document.getElementById('para-count-meta').textContent = '0 paragraphs detected';
   document.getElementById('goal-banner').classList.remove('show');
   document.getElementById('finish-panel').classList.remove('show');
+}
+
+// ─── Journal: auto-save, history, calendar ────────────────────────────────────
+let sessionGen = 0;          // bumps whenever the writing box switches to a different entry
+let currentId = null;        // id of the entry being written (null until there's text)
+let currentCreatedAt = null;
+let entries = [];
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let saveTimer = null;
+
+function scheduleSave(delay = 600) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, delay);
+}
+
+async function persist() {
+  const text = document.getElementById('writer').value;
+  if (!text.trim()) return;                       // nothing worth keeping yet
+  if (!currentId) { currentId = newEntryId(); currentCreatedAt = new Date().toISOString(); }
+  entries = await saveEntry({
+    id: currentId,
+    createdAt: currentCreatedAt,
+    updatedAt: new Date().toISOString(),
+    text,
+    completedCount,
+    enterCount,
+    tracks: sessionTracks.map(t => t ? { musicIndex: t.musicIndex, moodData: t.moodData } : null),
+  });
+  renderSidebars();
+}
+
+function renderSidebars() {
+  renderHistory(document.getElementById('history-list'), entries, currentId, {
+    onOpen: entry => { openEntry(entry); closeDrawers(); },
+    onDelete: removeEntry,
+  });
+  renderCalendar(document.getElementById('calendar'), entries, calMonth, currentId, {
+    onPickDay: entry => { openEntry(entry); closeDrawers(); },
+    onMonth: m => { calMonth = m; renderSidebars(); },
+  });
+}
+
+async function startNewEntry() {
+  clearTimeout(saveTimer);
+  await persist();
+  clearSession();
+  currentId = null; currentCreatedAt = null;
+  showDate(new Date());
+  renderSidebars();
+  closeDrawers();
   document.getElementById('writer').focus();
-});
+}
+
+async function openEntry(entry) {
+  if (entry.id === currentId) return;
+  clearTimeout(saveTimer);
+  await persist();
+  clearSession();
+  currentId = entry.id; currentCreatedAt = entry.createdAt;
+  const writer = document.getElementById('writer');
+  writer.value = entry.text;
+  prevText = entry.text;
+  completedCount = entry.completedCount || 0;
+  enterCount = entry.enterCount || 0;
+  sessionTracks = (entry.tracks || []).map(t => t ? { ...t, profile: MOODS[t.moodData?.mood] || MOODS.neutral } : null);
+
+  // Restore progress: ring, bars (replayable), title, banner, counts
+  const done = Math.min(completedCount, GOAL);
+  for (let i = 0; i < done; i++) {
+    pips[i].classList.add(pipCls[i]);
+    if (sessionTracks[i]) {
+      pips[i].classList.add('done');
+      pips[i].title = `replay paragraph ${i+1} — ${sessionTracks[i].moodData.mood}`;
+    }
+  }
+  if (done) updateRing(done);
+  if (sessionTracks.some(Boolean)) document.getElementById('pip-hint').classList.add('visible');
+  const titles = ['Start writing.','First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
+  document.getElementById('progress-title').textContent = titles[done];
+  if (completedCount >= GOAL) document.getElementById('goal-banner').classList.add('show');
+  const words = entry.text.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
+  const paras = (entry.text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
+  document.getElementById('para-count-meta').textContent = paras + ' paragraph' + (paras!==1?'s':'') + ' detected';
+  const isToday = dayKey(entry.createdAt) === dayKey(new Date());
+  notifTxt.textContent = isToday ? 'welcome back — keep writing' : 'reopened ' + new Date(entry.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric'}) + ' — click a bar to hear it';
+  showDate(entry.createdAt);
+  calMonth = new Date(new Date(entry.createdAt).getFullYear(), new Date(entry.createdAt).getMonth(), 1);
+  renderSidebars();
+}
+
+async function removeEntry(entry) {
+  if (!confirm('Delete this entry? This can\'t be undone.')) return;
+  entries = await deleteEntry(entry.id);
+  if (entry.id === currentId) {
+    clearSession();
+    currentId = null; currentCreatedAt = null;
+    showDate(new Date());
+  }
+  renderSidebars();
+}
+
+document.getElementById('reset-btn').addEventListener('click', startNewEntry);
+document.getElementById('new-entry-btn').addEventListener('click', startNewEntry);
+
+// Save if the app is closed or sent to the background mid-sentence
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { clearTimeout(saveTimer); persist(); } });
+
+// ─── Drawers (phones and narrow windows) ──────────────────────────────────────
+const backdrop = document.getElementById('drawer-backdrop');
+function openDrawer(id) {
+  closeDrawers();
+  document.getElementById(id).classList.add('open');
+  backdrop.classList.add('show');
+}
+function closeDrawers() {
+  document.querySelectorAll('.drawer.open').forEach(d => d.classList.remove('open'));
+  backdrop.classList.remove('show');
+}
+document.getElementById('open-history').addEventListener('click', () => openDrawer('history'));
+document.getElementById('open-calendar').addEventListener('click', () => openDrawer('calendar-panel'));
+backdrop.addEventListener('click', closeDrawers);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawers(); });
 
 // ─── Finish session + download ────────────────────────────────────────────────
 // Files are prepared when the panel opens, so sharing still counts as a direct click
@@ -301,6 +431,12 @@ document.getElementById('finish-btn').addEventListener('click', () => {
   panel.classList.add('show');
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
+
+(async () => {
+  entries = await loadEntries();
+  const today = entries.find(e => dayKey(e.createdAt) === dayKey(new Date()));
+  if (today) await openEntry(today); else renderSidebars();
+})();
 
 // Desktop: start with the cursor in the writing box. Phones: don't, or the keyboard
 // pops up and scrolls past the instructions before anyone reads them.

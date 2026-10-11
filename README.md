@@ -16,6 +16,7 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 2. Press **Enter (return) twice** to hear your frequency and start a new paragraph.
 3. After three paragraphs, your morning is complete. Click any colored bar under the progress ring to replay that paragraph's sound.
 4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email.
+5. Every entry saves automatically. Find past entries in **Your entries** on the left (like a chat history) and see the days you wrote on the **calendar** on the right, along with your streak. On a phone, open them with the buttons at the top of the screen.
 
 ## How It Works
 
@@ -31,11 +32,11 @@ Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the
 
 ## Project Structure
 
-index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
+index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing), journal.js (saving entries), sidebar.js (the entry history and calendar) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
 ## Privacy
 
-Your writing stays in your browser and is never stored on a server. If you add an API key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis.
+Your writing is saved only on your own device (in the browser on the website, or on your iPhone in the app) and is never stored on a server. If you add an API key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis.
 
 ## Setup
 
