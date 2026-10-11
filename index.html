@@ -69,7 +69,9 @@
 
   .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); }
   .logo em { font-style: italic; color: var(--accent1); }
-  .how-to { font-size: 12px; line-height: 1.7; color: var(--muted2); margin: -24px 0 32px; }
+  .how-to { font-size: 15px; line-height: 1.7; color: var(--text); margin: -16px 0 32px; padding: 16px 20px; border: 1px solid var(--accent1); background: var(--surface); }
+  .how-to strong { color: var(--accent1); font-weight: 400; }
+  .enter-hint { font-size: 13px; color: var(--accent1); letter-spacing: 0.04em; margin: 16px 0 10px; }
   .date-stamp { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
 
   .progress-section { display: flex; align-items: center; gap: 32px; margin-bottom: 32px; }
@@ -258,7 +260,7 @@
     <div class="date-stamp" id="date-stamp"></div>
   </header>
 
-  <p class="how-to">Turn your sound on and type below — a paragraph is anything you write before pressing Enter, any length, even one word. Every press of Enter plays music matched to your mood, and three paragraphs complete your morning.</p>
+  <p class="how-to">Turn your sound on and type a paragraph below — any length, even one word. <strong>Press Enter twice after each paragraph</strong> to hear music matched to your mood; three paragraphs complete your morning.</p>
 
   <div class="progress-section">
     <div class="ring-wrap">
@@ -382,9 +384,10 @@
 
   </div>
 
+  <div class="enter-hint">↵ ↵ &nbsp;press Enter twice after each paragraph to hear your music</div>
   <div class="editor-wrap">
     <textarea id="writer"
-      placeholder="Begin here. Press Enter to complete a paragraph..."
+      placeholder="Write a paragraph here, then press Enter twice..."
       spellcheck="true" autocomplete="off"
     ></textarea>
     <div class="corner tl"></div>

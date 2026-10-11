@@ -10,13 +10,13 @@ No sign-up and no install. It works in any modern browser.
 
 ## The 1-minute version
 
-**What it is:** a writing tool for your morning. Every time you press **Enter**, it works out the mood of what you just wrote (joyful, reflective, tense, hopeful and so on) and plays a short piece of choir-and-organ music in a cathedral-like space to match. Write three paragraphs and your morning is complete. Then download what you wrote as a Word file or PDF.
+**What it is:** a writing tool for your morning. Each time you finish a paragraph by pressing **Enter twice**, it works out the mood of what you just wrote (joyful, reflective, tense, hopeful and so on) and plays a short piece of choir-and-organ music in a cathedral-like space to match. Write three paragraphs and your morning is complete. Then download what you wrote as a Word file or PDF.
 
 **Why it's worth a try:** a blank page is hard to start, and most writing apps feel like work. The Morning Frequency turns each paragraph into a small reward. You keep writing because you want to hear what comes next. It's a few calm minutes that get your thoughts out of your head and onto the page, with a soundtrack that responds to how you feel.
 
 **How to use it:**
 1. Turn your sound on and start typing.
-2. Press **Enter** to finish a paragraph. Any length counts, even one word.
+2. Write a paragraph (any length, even one word), then press **Enter twice** to hear your music.
 3. Write three paragraphs to complete your morning. You can keep going after that.
 4. Click **Finish Session** to download your writing as **.docx** or **PDF**.
 
