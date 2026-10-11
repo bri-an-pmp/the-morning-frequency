@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Morning Frequency</title>
+<meta name="description" content="An ambient writing tool. Write three paragraphs, earn music tuned to your mood.">
+<meta property="og:title" content="The Morning Frequency">
+<meta property="og:description" content="An ambient writing tool. Write three paragraphs, earn music tuned to your mood.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0d0d0d">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --border2: #333;
+    --text: #e8e4dc;
+    --muted: #555;
+    --muted2: #888;
+    --accent1: #c8a96e;
+    --accent2: #7eb8a4;
+    --accent3: #d4756b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(#1e1e1e 1px, transparent 1px), linear-gradient(90deg, #1e1e1e 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 760px;
+    padding: 60px 32px 80px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); }
+  .logo em { font-style: italic; color: var(--accent1); }
+  .date-stamp { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .progress-section { display: flex; align-items: center; gap: 32px; margin-bottom: 32px; }
+
+  .ring-wrap { position: relative; width: 88px; height: 88px; flex-shrink: 0; }
+  .ring-svg { transform: rotate(-90deg); width: 88px; height: 88px; }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+  .ring-fill {
+    fill: none; stroke: var(--accent1); stroke-width: 3; stroke-linecap: round;
+    stroke-dasharray: 226; stroke-dashoffset: 226;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.4s ease;
+  }
+  .ring-count {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); line-height: 1;
+  }
+  .ring-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+
+  .progress-info { flex: 1; }
+  .progress-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); margin-bottom: 6px; }
+  .progress-sub { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .para-indicators { display: flex; gap: 8px; margin-top: 12px; }
+  .para-pip { width: 28px; height: 4px; border-radius: 2px; background: var(--border); transition: background 0.4s ease; }
+  .active-p1 { background: var(--accent1) !important; }
+  .active-p2 { background: var(--accent2) !important; }
+  .active-p3 { background: var(--accent3) !important; }
+
+  .mood-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; min-height: 28px; flex-wrap: wrap; }
+
+  .mood-badge {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 2px; border: 1px solid var(--border2);
+    color: var(--muted2); transition: all 0.4s ease; opacity: 0;
+  }
+  .mood-badge.visible { opacity: 1; }
+  .mood-joyful      { border-color: #c8a96e !important; color: #c8a96e !important; }
+  .mood-reflective  { border-color: #7eb8a4 !important; color: #7eb8a4 !important; }
+  .mood-tense       { border-color: #d4756b !important; color: #d4756b !important; }
+  .mood-melancholic { border-color: #8b9fc9 !important; color: #8b9fc9 !important; }
+  .mood-hopeful     { border-color: #82b86a !important; color: #82b86a !important; }
+  .mood-analytical  { border-color: #9e88d4 !important; color: #9e88d4 !important; }
+  .mood-nostalgic   { border-color: #d49e8b !important; color: #d49e8b !important; }
+  .mood-neutral     { border-color: #888 !important; color: #888 !important; }
+
+  .mood-params { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; opacity: 0; transition: opacity 0.4s ease; }
+  .mood-params.visible { opacity: 1; }
+
+  .analyzing-text { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; opacity: 0; transition: opacity 0.3s; }
+  .analyzing-text.visible { opacity: 1; }
+
+  .notif { height: 32px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 16px; transition: color 0.3s ease; }
+  .notif-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s ease; }
+
+  .notif.playing { color: var(--notif-color, var(--accent1)); }
+  .notif.playing .notif-dot { background: var(--notif-color, var(--accent1)); animation: pulse 1s ease-in-out infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+  .waveform { display: flex; align-items: center; gap: 3px; margin-left: auto; height: 20px; }
+  .wave-bar { width: 3px; border-radius: 2px; background: var(--accent1); height: 4px; transition: background 0.3s; }
+  .wave-bar.animating { animation: wave-dance .6s ease-in-out infinite; }
+  .wave-bar:nth-child(2){animation-delay:.1s} .wave-bar:nth-child(3){animation-delay:.2s}
+  .wave-bar:nth-child(4){animation-delay:.05s} .wave-bar:nth-child(5){animation-delay:.15s}
+  @keyframes wave-dance { 0%,100%{height:4px} 50%{height:16px} }
+
+  .settings-toggle {
+    display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; margin-bottom: 0;
+    padding: 0; background: none; border: none; transition: color 0.2s;
+  }
+  .settings-toggle:hover { color: var(--text); }
+  .settings-toggle .arrow { font-size: 9px; transition: transform 0.2s; display: inline-block; }
+  .settings-toggle.open .arrow { transform: rotate(90deg); }
+
+  .settings-panel {
+    display: none; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin-top: 16px; margin-bottom: 20px;
+    padding: 20px; border: 1px solid var(--border); background: var(--surface);
+  }
+  .settings-panel.open { display: grid; }
+
+  .setting-group { display: flex; flex-direction: column; gap: 8px; }
+  .setting-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .setting-row { display: flex; align-items: center; gap: 10px; }
+
+  input[type="range"] {
+    flex: 1; appearance: none; height: 2px; background: var(--border2); border-radius: 1px; outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text); cursor: pointer; transition: background 0.2s; }
+  input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent1); }
+
+  .range-val { font-size: 11px; color: var(--muted2); min-width: 32px; text-align: right; }
+
+  select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 8px;
+    border-radius: 2px; outline: none; cursor: pointer; width: 100%; appearance: none;
+  }
+  select:focus { border-color: var(--border2); }
+
+  .api-key-row { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; }
+  .api-key-input-wrap { display: flex; gap: 8px; }
+
+  input[type="password"], input[type="text"] {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 12px; padding: 8px 10px; border-radius: 2px; outline: none;
+  }
+  input[type="password"]:focus, input[type="text"]:focus { border-color: var(--border2); }
+
+  .save-key-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted2);
+    font-family: 'DM Mono', monospace; font-size: 11px; padding: 0 14px;
+    cursor: pointer; border-radius: 2px; transition: border-color 0.2s, color 0.2s; white-space: nowrap;
+  }
+  .save-key-btn:hover { border-color: var(--muted2); color: var(--text); }
+
+  .key-status { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+  .key-status.ok { color: #7eb8a4; }
+  .key-status.err { color: #d4756b; }
+
+  .override-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); }
+
+  .toggle-wrap { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+  .toggle-wrap input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; margin: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--border2); border-radius: 9px; transition: background 0.2s; }
+  .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--muted2); border-radius: 50%; transition: transform 0.2s, background 0.2s; pointer-events: none; }
+  .toggle-wrap input:checked ~ .toggle-track { background: #7eb8a4; }
+  .toggle-wrap input:checked ~ .toggle-thumb { transform: translateX(14px); background: #fff; }
+
+  .manual-mood-wrap { display: none; grid-column: 1 / -1; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+  .manual-mood-wrap.visible { display: flex; }
+
+  .mood-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mood-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 5px 12px; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .mood-btn:hover { border-color: var(--muted2); color: var(--text); }
+  .mood-btn.selected { border-color: var(--accent1); color: var(--accent1); }
+
+  .controls-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+
+  .editor-wrap { position: relative; margin-top: 0; }
+  textarea {
+    width: 100%; min-height: 360px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 2px; color: var(--text); font-family: 'DM Serif Display', serif; font-size: 18px;
+    line-height: 1.75; padding: 28px 32px; resize: vertical; outline: none;
+    transition: border-color 0.2s ease; caret-color: var(--accent1);
+  }
+  textarea::placeholder { color: #2a2a2a; font-style: italic; }
+  textarea:focus { border-color: #3a3a3a; }
+
+  .corner { position: absolute; width: 10px; height: 10px; border-color: var(--accent1); border-style: solid; opacity: 0.4; transition: opacity 0.3s; }
+  textarea:focus ~ .corner { opacity: 0.9; }
+  .corner.tl { top:-1px;left:-1px;border-width:1px 0 0 1px; }
+  .corner.tr { top:-1px;right:-1px;border-width:1px 1px 0 0; }
+  .corner.bl { bottom:-1px;left:-1px;border-width:0 0 1px 1px; }
+  .corner.br { bottom:-1px;right:-1px;border-width:0 1px 1px 0; }
+
+  .meta-row { display: flex; justify-content: space-between; margin-top: 12px; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+
+  .goal-banner { display: none; margin-top: 32px; padding: 20px 24px; border: 1px solid #2e2e2e; background: #111; text-align: center; }
+  .goal-banner.show { display: block; animation: slideUp .5s cubic-bezier(0.34,1.56,0.64,1); }
+  .goal-banner-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--accent3); margin-bottom: 6px; }
+  .goal-banner-sub { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .reset-btn { margin-top: 20px; background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px; cursor: pointer; transition: border-color .2s, color .2s; display: block; margin-left: auto; }
+  .reset-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: #333; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">the morning <em>frequency</em></div>
+    <div class="date-stamp" id="date-stamp"></div>
+  </header>
+
+  <div class="progress-section">
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 88 88">
+        <circle class="ring-bg" cx="44" cy="44" r="36"/>
+        <circle class="ring-fill" id="ring" cx="44" cy="44" r="36"/>
+      </svg>
+      <div class="ring-count">
+        <span id="count-num">0</span>
+        <span class="ring-label">of 3</span>
+      </div>
+    </div>
+    <div class="progress-info">
+      <div class="progress-title" id="progress-title">Start writing.</div>
+      <div class="progress-sub" id="progress-sub">Each paragraph unlocks music tuned to what you wrote. Finish 3 for your morning frequency.</div>
+      <div class="para-indicators">
+        <div class="para-pip" id="pip1"></div>
+        <div class="para-pip" id="pip2"></div>
+        <div class="para-pip" id="pip3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mood-row">
+    <div class="analyzing-text" id="analyzing-text">analyzing mood...</div>
+    <div class="mood-badge" id="mood-badge"></div>
+    <div class="mood-params" id="mood-params"></div>
+  </div>
+
+  <div class="notif" id="notif">
+    <div class="notif-dot"></div>
+    <span id="notif-text">waiting for your first paragraph...</span>
+    <div class="waveform">
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <button class="settings-toggle" id="settings-toggle" onclick="toggleSettings()">
+      <span class="arrow">▶</span> music settings
+    </button>
+  </div>
+
+  <div class="settings-panel" id="settings-panel">
+
+    <div class="api-key-row">
+      <div class="setting-label">Anthropic API key — enables AI mood analysis</div>
+      <div class="api-key-input-wrap">
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off"/>
+        <button class="save-key-btn" onclick="saveApiKey()">save</button>
+      </div>
+      <div class="key-status" id="key-status">not set — mood detection uses keyword heuristics</div>
+    </div>
+
+    <div class="override-row">
+      <label class="toggle-wrap">
+        <input type="checkbox" id="manual-override-toggle" onchange="toggleManualOverride(this.checked)"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+      <span>override mood detection — pick manually</span>
+    </div>
+
+    <div class="manual-mood-wrap" id="manual-mood-wrap">
+      <div class="setting-label">select mood</div>
+      <div class="mood-buttons">
+        <button class="mood-btn" data-mood="joyful"      onclick="selectMood(this)">joyful</button>
+        <button class="mood-btn" data-mood="reflective"  onclick="selectMood(this)">reflective</button>
+        <button class="mood-btn" data-mood="tense"       onclick="selectMood(this)">tense</button>
+        <button class="mood-btn" data-mood="melancholic" onclick="selectMood(this)">melancholic</button>
+        <button class="mood-btn" data-mood="hopeful"     onclick="selectMood(this)">hopeful</button>
+        <button class="mood-btn" data-mood="analytical"  onclick="selectMood(this)">analytical</button>
+        <button class="mood-btn" data-mood="nostalgic"   onclick="selectMood(this)">nostalgic</button>
+        <button class="mood-btn" data-mood="neutral"     onclick="selectMood(this)">neutral</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">tempo offset (bpm)</div>
+      <div class="setting-row">
+        <span style="font-size:11px;color:var(--muted)">−50</span>
+        <input type="range" id="tempo-offset" min="-50" max="50" value="0" step="5"
+          oninput="document.getElementById('tempo-val').textContent=(this.value>0?'+':'')+this.value"/>
+        <span style="font-size:11px;color:var(--muted)">+50</span>
+        <span class="range-val" id="tempo-val">0</span>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">volume</div>
+      <div class="setting-row">
+        <input type="range" id="volume" min="0" max="100" value="75" step="5"
+          oninput="document.getElementById('volume-val').textContent=this.value+'%'"/>
+        <span class="range-val" id="volume-val">75%</span>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">key preference</div>
+      <select id="key-pref">
+        <option value="auto">auto (from mood)</option>
+        <option value="C">C major / A minor</option>
+        <option value="G">G major / E minor</option>
+        <option value="D">D major / B minor</option>
+        <option value="F">F major / D minor</option>
+        <option value="Bb">Bb major / G minor</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">texture / voice</div>
+      <select id="texture-pref">
+        <option value="auto">auto (from mood)</option>
+        <option value="sparse">sparse — minimal notes</option>
+        <option value="rich">rich — full chords + pad</option>
+        <option value="melodic">melodic — phrase-first</option>
+        <option value="rhythmic">rhythmic — pulse-driven</option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="editor-wrap">
+    <textarea id="writer"
+      placeholder="Begin here. Press Enter twice to complete a paragraph..."
+      spellcheck="true" autocomplete="off"
+    ></textarea>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+  </div>
+
+  <div class="meta-row">
+    <span id="word-count">0 words</span>
+    <span id="para-count-meta">0 paragraphs detected</span>
+  </div>
+
+  <div class="goal-banner" id="goal-banner">
+    <div class="goal-banner-title">Morning frequency complete.</div>
+    <div class="goal-banner-sub">3 paragraphs written. Keep going or come back tomorrow.</div>
+  </div>
+
+  <button class="reset-btn" id="reset-btn">reset session</button>
+
+  <footer>
+    <span>the morning frequency — v1.0</span>
+    <span>github.com/bri-an-pmp/the-morning-frequency</span>
+  </footer>
+
+</div>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let audioCtx = null;
+let completedCount = 0;
+let lastNewlineCount = 0;
+let isManualOverride = false;
+let manualMood = null;
+let apiKey = localStorage.getItem('pm_api_key') || '';
+const GOAL = 3;
+
+if (apiKey) {
+  document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('key-status').textContent = 'key saved — AI mood analysis active';
+  document.getElementById('key-status').className = 'key-status ok';
+}
+
+document.getElementById('date-stamp').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+// ─── Mood profiles ────────────────────────────────────────────────────────────
+const MOODS = {
+  joyful:      { label:'joyful',      root:'C',  tempoBase:138, energy:0.85, valence:0.9,  color:'#c8a96e', desc:'C major · 138bpm · bright arpeggios',   scale:[0,2,4,7,9,12],       chord:[0,4,7,12],  pad:[0,7]     },
+  reflective:  { label:'reflective',  root:'D',  tempoBase:62,  energy:0.3,  valence:0.5,  color:'#7eb8a4', desc:'D minor · 62bpm · slow sustained pad',    scale:[0,2,3,5,7,8,10,12],  chord:[0,3,7,12],  pad:[0,7,10]  },
+  tense:       { label:'tense',       root:'B',  tempoBase:160, energy:0.9,  valence:0.15, color:'#d4756b', desc:'B dim · 160bpm · staccato pulses',        scale:[0,1,3,4,6,7,9,10,12],chord:[0,3,6,9],   pad:[0,6]     },
+  melancholic: { label:'melancholic', root:'G',  tempoBase:52,  energy:0.2,  valence:0.2,  color:'#8b9fc9', desc:'G minor · 52bpm · descending lines',      scale:[0,2,3,5,7,8,10,12],  chord:[0,3,7],     pad:[0,3,7,10]},
+  hopeful:     { label:'hopeful',     root:'E',  tempoBase:92,  energy:0.65, valence:0.78, color:'#82b86a', desc:'E major · 92bpm · rising phrases',        scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7,11],  pad:[0,7]     },
+  analytical:  { label:'analytical',  root:'A',  tempoBase:80,  energy:0.5,  valence:0.55, color:'#9e88d4', desc:'A dorian · 80bpm · minimal, sparse',     scale:[0,2,3,5,7,9,10,12],  chord:[0,5,7],     pad:[0,7]     },
+  nostalgic:   { label:'nostalgic',   root:'F',  tempoBase:68,  energy:0.4,  valence:0.6,  color:'#d49e8b', desc:'F major · 68bpm · waltz-like melody',    scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7],     pad:[0,4,7]   },
+  neutral:     { label:'neutral',     root:'C',  tempoBase:72,  energy:0.5,  valence:0.5,  color:'#888',    desc:'C pentatonic · 72bpm · gentle chord tones',scale:[0,2,4,7,9,12],      chord:[0,4,7,12],  pad:[0,7]     }
+};
+
+const ROOT_FREQ = { C:261.63, D:293.66, E:329.63, F:349.23, G:392.00, A:440.00, B:493.88, Bb:233.08 };
+
+// ─── Audio engine v0.4 — choir + organ + cathedral reverb + delay ─────────────
+
+function ctx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function vol() { return parseInt(document.getElementById('volume').value) / 100; }
+function getTempo(p) { return Math.max(20, p.tempoBase + parseInt(document.getElementById('tempo-offset').value)); }
+function getRootFreq(p) {
+  const k = document.getElementById('key-pref').value;
+  return k === 'auto' ? (ROOT_FREQ[p.root] || 261.63) : (ROOT_FREQ[k] || 261.63);
+}
+function getTexture(p) {
+  const t = document.getElementById('texture-pref').value;
+  if (t !== 'auto') return t;
+  if (p.energy < 0.3) return 'sparse';
+  if (p.energy > 0.75) return 'rhythmic';
+  if (p.valence > 0.7) return 'melodic';
+  return 'rich';
+}
+
+// ── Cathedral reverb IR — longer tail, denser early reflections ───────────────
+function buildCathedralReverb(c) {
+  const sr = c.sampleRate;
+  const decay = 4.8;                        // seconds — proper cathedral length
+  const preDelay = 0.028;
+  const len = Math.ceil(sr * (decay + preDelay + 0.2));
+  const ir = c.createBuffer(2, len, sr);
+  const preS = Math.ceil(sr * preDelay);
+
+  // Dense early reflection comb — 12 reflections for a large stone space
+  const refs = [0.017,0.031,0.043,0.059,0.071,0.089,0.107,0.131,0.163,0.197,0.241,0.293]
+    .map(d => Math.ceil(sr * d));
+
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    // Late tail: coloured noise — two-pass LP for warmth
+    for (let i = preS; i < len; i++) {
+      const t = (i - preS) / sr;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-t * (2.8 / decay)) * (ch ? 1.0 : 0.94);
+    }
+    // Two-pass one-pole LP (simulates stone/air absorption at higher freqs)
+    let p1 = 0, p2 = 0;
+    for (let i = 0; i < len; i++) { d[i] = p1 + 0.18*(d[i]-p1); p1 = d[i]; }
+    for (let i = 0; i < len; i++) { d[i] = p2 + 0.12*(d[i]-p2); p2 = d[i]; }
+    // Early reflections superimposed
+    refs.forEach((pos, idx) => {
+      if (pos < len) {
+        const amp = 0.72 * Math.exp(-idx * 0.22) * (ch ? 0.88 : 1.0);
+        d[pos] += amp; if (pos+1 < len) d[pos+1] += amp * 0.4;
+      }
+    });
+  }
+  return ir;
+}
+
+// ── Signal chain: source → [dry | reverb | delay→reverb] → master ─────────────
+// Built once and cached. All voices route into `bus` which feeds the FX graph.
+let _chain = null;
+function getChain(c) {
+  if (_chain && _chain.ctx === c) return _chain;
+
+  // Phaser — 6 allpass stages modulated by a slow LFO
+  // Allpass filters don't cut frequency, they shift phase — sweeping their
+  // center frequencies creates the characteristic comb-filter whoosh
+  const PHASER_STAGES = 6;
+  const allpassFilters = Array.from({ length: PHASER_STAGES }, () => {
+    const ap = c.createBiquadFilter();
+    ap.type = 'allpass';
+    ap.frequency.value = 1000;   // center — LFO will sweep around this
+    ap.Q.value = 0.5;            // gentle — wider Q = more dramatic notches
+    return ap;
+  });
+
+  // Chain the allpass stages in series
+  for (let i = 0; i < PHASER_STAGES - 1; i++) {
+    allpassFilters[i].connect(allpassFilters[i + 1]);
+  }
+
+  // LFO: slow sweep (0.25 Hz) — subtle, ambient, not seasick
+  const phaserLFO = c.createOscillator();
+  const phaserLFOGain = c.createGain();
+  phaserLFO.type = 'sine';
+  phaserLFO.frequency.value = 0.25;     // one full sweep every 4 seconds
+  phaserLFOGain.gain.value = 700;       // sweeps ±700Hz around center — musical range
+  phaserLFO.connect(phaserLFOGain);
+  // Modulate every allpass filter's frequency in sync
+  allpassFilters.forEach(ap => phaserLFOGain.connect(ap.frequency));
+  phaserLFO.start();
+
+  // Phaser wet/dry mix — blend phased signal back with dry for depth
+  const phaserWet  = c.createGain(); phaserWet.gain.value  = 0.5;
+  const phaserDry  = c.createGain(); phaserDry.gain.value  = 0.5;
+  const phaserOut  = c.createGain(); phaserOut.gain.value  = 1.0;
+
+  // Reverb
+  const conv = c.createConvolver();
+  conv.buffer = buildCathedralReverb(c);
+  const reverbGain = c.createGain();
+  reverbGain.gain.value = 0.88;             // cathedral wet mix — wetter
+
+  // Delay (dotted-eighth at tempo 72 ≈ 416ms, scaled per mood)
+  const delay = c.createDelay(2.0);
+  delay.delayTime.value = 0.38;             // updated per-chord in playMoodMusic
+  const delayFB = c.createGain();
+  delayFB.gain.value = 0.44;               // feedback — three echoes before silence
+  const delayLP = c.createBiquadFilter();  // tame harsh delay repeats
+  delayLP.type = 'lowpass'; delayLP.frequency.value = 3200;
+  const delayGain = c.createGain();
+  delayGain.gain.value = 0.38;             // delay send level — more present
+
+  // Dry path
+  const dry = c.createGain();
+  dry.gain.value = 0.55;
+
+  const master = c.createGain();
+  master.gain.value = 0.72;
+
+  // Wiring:
+  // bus → phaserDry ──────────────────────┐
+  //     → allpass[0..5] → phaserWet ──────┴→ phaserOut → dry  → master → destination
+  //                                                     → delayGain → delay → ...
+  //                                                     → conv → reverbGain → master
+  const bus = c.createGain();
+  bus.gain.value = 1.0;
+
+  // Bus feeds both legs of phaser blend
+  bus.connect(phaserDry);
+  bus.connect(allpassFilters[0]);
+  allpassFilters[PHASER_STAGES - 1].connect(phaserWet);
+  phaserDry.connect(phaserOut);
+  phaserWet.connect(phaserOut);
+
+  // phaserOut feeds everything downstream
+  phaserOut.connect(dry);
+  phaserOut.connect(delayGain);
+  phaserOut.connect(conv);
+
+  delayGain.connect(delay);
+  delay.connect(delayLP);
+  delayLP.connect(delayFB);
+  delayFB.connect(delay);          // feedback loop
+  delayLP.connect(conv);           // delay also feeds reverb for smear
+
+  conv.connect(reverbGain);
+
+  dry.connect(master);
+  reverbGain.connect(master);
+  master.connect(c.destination);
+
+  _chain = { ctx: c, bus, delay, dry, reverbGain, master };
+  return _chain;
+}
+
+// ── CHOIR voice ───────────────────────────────────────────────────────────────
+// Simulates a section of singers on one pitch:
+//   - 5 detuned unison oscillators (spread ±14 cents) for section width
+//   - BiquadFilter vowel formant (bandpass centred on a vocal formant frequency)
+//   - Slow attack (breath), long release (legato cut-off)
+//   - LFO vibrato via OscillatorNode modulating frequency (kicks in after onset)
+function choirVoice(c, bus, freq, startT, dur, gain, formantFreq = 800, vibratoDepth = 3.5) {
+  const v = vol();
+  const attack = 0.72 + Math.random() * 0.14;   // slower breath — epic swell in
+  const release = 0.9;
+  const sectionSize = 5;
+  const detuneSpreads = [-14, -6, 0, 6, 14];     // cents per singer
+
+  const sectionGain = c.createGain();
+  sectionGain.gain.value = (gain * v) / sectionSize;
+
+  // Formant filter — shapes the vowel character
+  const formant = c.createBiquadFilter();
+  formant.type = 'bandpass';
+  formant.frequency.value = formantFreq;
+  formant.Q.value = 6.0;
+
+  // Second formant for richer vowel (two resonances = "ah" or "oh")
+  const formant2 = c.createBiquadFilter();
+  formant2.type = 'bandpass';
+  formant2.frequency.value = formantFreq * 2.4;
+  formant2.Q.value = 4.5;
+
+  // Envelope
+  const env = c.createGain();
+  env.gain.setValueAtTime(0.0001, startT);
+  env.gain.exponentialRampToValueAtTime(1.0, startT + attack);
+  env.gain.setValueAtTime(1.0, startT + dur - release);
+  env.gain.exponentialRampToValueAtTime(0.0001, startT + dur);
+
+  // LFO vibrato — starts after attack settles
+  const lfo = c.createOscillator();
+  const lfoGain = c.createGain();
+  lfo.frequency.value = 5.2 + Math.random() * 0.6; // 5.2–5.8 Hz natural vibrato
+  lfoGain.gain.setValueAtTime(0, startT);
+  lfoGain.gain.linearRampToValueAtTime(0, startT + attack + 0.18);
+  lfoGain.gain.linearRampToValueAtTime(vibratoDepth, startT + attack + 0.55);
+  lfo.connect(lfoGain);
+  lfo.start(startT); lfo.stop(startT + dur + 0.1);
+
+  // Build each singer oscillator
+  detuneSpreads.forEach(cents => {
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.detune.value = cents;
+    lfoGain.connect(osc.frequency);  // vibrato modulates frequency
+    osc.connect(sectionGain);
+    osc.start(startT); osc.stop(startT + dur + 0.15);
+  });
+
+  // Mix: unfiltered sine body + two formant layers
+  sectionGain.connect(env);
+
+  const formantMix = c.createGain(); formantMix.gain.value = 0.55;
+  sectionGain.connect(formant); formant.connect(formantMix);
+  sectionGain.connect(formant2); formant2.connect(formantMix);
+  formantMix.connect(env);
+
+  env.connect(bus);
+}
+
+// ── ORGAN voice ───────────────────────────────────────────────────────────────
+// Additive synthesis: 8 drawbar harmonics at classic Hammond ratios
+// Harmonics: 16', 8', 5⅓', 4', 2⅔', 2', 1⅗', 1'
+// Drawbar levels per mood are passed in as an 8-element array (0–1)
+const ORGAN_DRAWBARS = {
+  joyful:      [0.5, 1.0, 0.4, 0.6, 0.2, 0.3, 0.1, 0.05],
+  reflective:  [0.8, 1.0, 0.1, 0.3, 0.0, 0.1, 0.0, 0.0 ],
+  tense:       [0.3, 0.9, 0.5, 0.4, 0.4, 0.2, 0.1, 0.05],
+  melancholic: [0.9, 1.0, 0.0, 0.2, 0.0, 0.1, 0.0, 0.0 ],
+  hopeful:     [0.4, 1.0, 0.3, 0.5, 0.2, 0.3, 0.1, 0.0 ],
+  analytical:  [0.3, 0.8, 0.2, 0.6, 0.1, 0.4, 0.0, 0.0 ],
+  nostalgic:   [0.7, 1.0, 0.2, 0.4, 0.1, 0.2, 0.0, 0.0 ],
+  neutral:     [0.5, 1.0, 0.2, 0.4, 0.1, 0.2, 0.0, 0.0 ],
+};
+const DRAWBAR_RATIOS = [0.5, 1, 1.5, 2, 3, 4, 5, 8]; // harmonic multipliers
+
+function organVoice(c, bus, freq, startT, dur, gain, moodLabel) {
+  const v = vol();
+  const drawbars = ORGAN_DRAWBARS[moodLabel] || ORGAN_DRAWBARS.neutral;
+
+  // Classic organ: nearly instant attack, no natural decay (held tone)
+  const env = c.createGain();
+  env.gain.setValueAtTime(0.0001, startT);
+  env.gain.linearRampToValueAtTime(gain * v, startT + 0.018);
+  env.gain.setValueAtTime(gain * v, startT + dur - 0.025);
+  env.gain.linearRampToValueAtTime(0.0001, startT + dur);
+
+  // Subtle rotary-speaker chorus: two slightly detuned copies
+  const rotaryDepth = 2.2;
+
+  DRAWBAR_RATIOS.forEach((ratio, idx) => {
+    const level = drawbars[idx];
+    if (level < 0.01) return;
+    const harmonicFreq = freq * ratio;
+
+    [0, rotaryDepth, -rotaryDepth * 0.6].forEach((detuneCents, di) => {
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = harmonicFreq;
+      osc.detune.value = detuneCents;
+      const hGain = c.createGain();
+      hGain.gain.value = level * (di === 0 ? 0.6 : 0.2);
+      osc.connect(hGain);
+      hGain.connect(env);
+      osc.start(startT);
+      osc.stop(startT + dur + 0.05);
+    });
+  });
+
+  env.connect(bus);
+}
+
+// ── Chord voicings per mood — rich extensions ─────────────────────────────────
+const CHORD_VOICINGS = {
+  joyful:      [ [0,4,7,11,14],    [0,4,7,11,16],   [0,5,7,11,14]   ],
+  reflective:  [ [0,3,7,10,14],    [0,3,7,10,17],   [0,3,7,10,13]   ],
+  tense:       [ [0,3,6,9],        [0,3,6,10],      [0,1,6,10]      ],
+  melancholic: [ [0,3,7,10,13],    [0,3,7,10],      [0,2,3,7,10]    ],
+  hopeful:     [ [0,4,7,11,14],    [0,4,7,9,14],    [0,4,7,11,16]   ],
+  analytical:  [ [0,2,7,10],       [0,2,7,14],      [0,5,7,10]      ],
+  nostalgic:   [ [0,4,7,9,14],     [0,4,7,12,16],   [0,4,7,9,12]    ],
+  neutral:     [ [0,4,7,12],       [0,2,4,7],       [0,4,7,9]       ],
+};
+
+// Choir formant frequencies per voicing note index (root=low, upper=bright)
+const FORMANTS = [280, 460, 640, 800, 920, 1080, 1200];
+
+// ── Melody lines per mood ─────────────────────────────────────────────────────
+const MELODIES = {
+  joyful:      [[0,2,4,7,9,7,4],[4,7,9,11,12,11,9],[7,9,11,12,14,12,11]],
+  reflective:  [[0,3,5,7,5,3,0],[3,5,7,10,7,5,3],[5,7,10,12,10,7,5]],
+  tense:       [[0,1,3,6,3,1,0],[1,3,6,9,6,3,1],[0,3,6,9,10,9,6]],
+  melancholic: [[0,2,3,5,3,2,0],[2,3,5,7,5,3,2],[0,3,5,7,10,7,5]],
+  hopeful:     [[0,2,4,5,7,9,7],[2,4,5,7,9,11,9],[4,5,7,9,11,12,11]],
+  analytical:  [[0,2,5,7,5,2,0],[2,5,7,9,7,5,2],[0,5,7,10,7,5,0]],
+  nostalgic:   [[0,2,4,7,4,2,0],[2,4,7,9,7,4,2],[4,7,9,12,9,7,4]],
+  neutral:     [[0,2,4,7,4,2,0],[2,4,7,9,7,4,2],[0,4,7,9,7,4,0]],
+};
+
+// ── Main music renderer ───────────────────────────────────────────────────────
+function playMoodMusic(profile, paraIndex) {
+  const c = ctx();
+  const chain = getChain(c);
+  const root = getRootFreq(profile);
+  const texture = getTexture(profile);
+  const beat = 60 / getTempo(profile);
+  const T = c.currentTime + 0.12;
+
+  // Set delay time to dotted-eighth at current tempo (feels musical not slapback)
+  chain.delay.delayTime.setValueAtTime(beat * 0.75, T);
+
+  // ── Epic master fade-in: bus swells from silence over 1.4s ───────────────
+  chain.bus.gain.cancelScheduledValues(T);
+  chain.bus.gain.setValueAtTime(0.0001, T);
+  chain.bus.gain.exponentialRampToValueAtTime(1.0, T + 1.4);
+
+  // ── Master fade-out: longer tail — 3.8s dissolve into reverb ────────────
+  const chordDur = 4.0 + (1 - profile.energy) * 2.0;
+  const fadeOutStart = T + chordDur - 0.2;
+  const fadeOutEnd   = T + chordDur + 3.8;
+  chain.master.gain.cancelScheduledValues(T);
+  chain.master.gain.setValueAtTime(0.88, T);
+  chain.master.gain.setValueAtTime(0.88, fadeOutStart);
+  chain.master.gain.exponentialRampToValueAtTime(0.0001, fadeOutEnd);
+
+  // ── Octave bounce — three stabs in the last second before silence ─────────
+  // root → root+8va → root+15ma, each a quick breathy choir hit
+  const bounceStart = T + chordDur + 2.5;  // fires deep in the fade tail
+  [0, 12, 24].forEach((octSemi, i) => {
+    const bf = root * Math.pow(2, octSemi / 12);
+    const bt = bounceStart + i * 0.28;
+    const bDur = 0.55;
+    // One choir voice per bounce — fast attack, short duration, gentle gain
+    const bosc = c.createOscillator();
+    const benv = c.createGain();
+    bosc.type = 'sine';
+    bosc.frequency.value = bf;
+    benv.gain.setValueAtTime(0.0001, bt);
+    benv.gain.exponentialRampToValueAtTime(0.06 * vol(), bt + 0.04);
+    benv.gain.exponentialRampToValueAtTime(0.0001, bt + bDur);
+    bosc.connect(benv);
+    benv.connect(chain.bus);
+    bosc.start(bt);
+    bosc.stop(bt + bDur + 0.05);
+    // Detuned companion for width
+    const bosc2 = c.createOscillator();
+    const benv2 = c.createGain();
+    bosc2.type = 'sine';
+    bosc2.frequency.value = bf;
+    bosc2.detune.value = 9;
+    benv2.gain.setValueAtTime(0.0001, bt);
+    benv2.gain.exponentialRampToValueAtTime(0.03 * vol(), bt + 0.05);
+    benv2.gain.exponentialRampToValueAtTime(0.0001, bt + bDur);
+    bosc2.connect(benv2);
+    benv2.connect(chain.bus);
+    bosc2.start(bt);
+    bosc2.stop(bt + bDur + 0.05);
+  });
+
+  const voicings = CHORD_VOICINGS[profile.label] || CHORD_VOICINGS.neutral;
+  const voicing  = voicings[paraIndex % voicings.length];
+
+  // ── Bass foundation — deep organ sub-tone ────────────────────────────────
+  organVoice(c, chain.bus, root / 2, T, chordDur * 1.15, 0.09, profile.label);
+
+  // ── Per-note rendering: choir + organ layered on each chord tone ──────────
+  voicing.forEach((semi, i) => {
+    const freq   = root * Math.pow(2, semi / 12);
+    const noteT  = T + (texture === 'rhythmic' ? i * 0.07 : 0); // stagger for rhythmic
+    const formant = FORMANTS[Math.min(i, FORMANTS.length - 1)];
+
+    // Choir — primary voice, pushed up in the mix
+    const choirGain = texture === 'sparse' ? 0.17 : 0.14;
+    choirVoice(c, chain.bus, freq, noteT, chordDur, choirGain, formant, profile.energy * 4.5);
+
+    // Organ — supporting foundation, pulled back
+    const orgGain = texture === 'sparse' ? 0.028 : 0.038;
+    organVoice(c, chain.bus, freq, noteT, chordDur, orgGain, profile.label);
+  });
+
+  // ── Texture-specific additions ────────────────────────────────────────────
+  if (texture === 'melodic' || texture === 'rich') {
+    // Upper choir octave for brightness
+    const topSemi = voicing[voicing.length - 1];
+    choirVoice(c, chain.bus, root * Math.pow(2, (topSemi + 12) / 12),
+      T + 0.18, chordDur * 0.9, 0.05, 1200, 2.5);
+  }
+
+  if (texture === 'melodic') {
+    // Melody sung by choir, one octave up, lighter vibrato
+    const mel = (MELODIES[profile.label] || MELODIES.neutral)[paraIndex % 3];
+    const noteLen = beat * 0.62;
+    mel.forEach((semi, i) => {
+      const mf = root * Math.pow(2, (semi + 12) / 12);
+      choirVoice(c, chain.bus, mf, T + i * beat * 0.40, noteLen, 0.08, 900, 2.8);
+    });
+  }
+
+  if (texture === 'rhythmic') {
+    // Punchy organ accents on beat subdivisions
+    [0, beat * 0.5, beat, beat * 1.5].forEach(offset => {
+      organVoice(c, chain.bus, root * 2, T + 0.55 + offset, beat * 0.22, 0.06, profile.label);
+    });
+  }
+
+  if (texture === 'sparse') {
+    // Just root + fifth choir, very open voicing, max reverb bloom
+    // Already handled above — add a solo delayed colour note
+    const colourFreq = root * Math.pow(2, voicing[voicing.length - 1] / 12);
+    choirVoice(c, chain.bus, colourFreq, T + 1.6, chordDur - 1.0, 0.06, 700, 3.0);
+  }
+
+  // ── Paragraph 3 finale: full choir swell + resolution chord ──────────────
+  if (paraIndex === 2) {
+    const finaleVoicing = [0, 4, 7, 11, 14, 17]; // maj11 — maximum richness
+    const fT = T + chordDur * 0.62;
+    finaleVoicing.forEach((semi, i) => {
+      const ff = root * Math.pow(2, semi / 12);
+      choirVoice(c, chain.bus, ff, fT + i * 0.055, chordDur * 1.35, 0.09,
+        FORMANTS[Math.min(i, FORMANTS.length-1)], 3.5);
+      organVoice(c, chain.bus, ff, fT + i * 0.055, chordDur * 1.35, 0.05, profile.label);
+    });
+    // Sub-bass swell into the finale
+    organVoice(c, chain.bus, root / 4, fT, chordDur * 1.4, 0.07, profile.label);
+  }
+}
+
+// ─── Mood analysis ────────────────────────────────────────────────────────────
+async function analyzeMood(text) {
+  if (!apiKey) return heuristicMood(text);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 120,
+        messages: [{
+          role: 'user',
+          content: `Analyze the emotional mood of this paragraph. Reply ONLY with valid JSON — no markdown, no explanation.
+
+"${text.trim().slice(0,600)}"
+
+Format: {"mood":"<joyful|reflective|tense|melancholic|hopeful|analytical|nostalgic|neutral>","energy":<0.0-1.0>,"valence":<0.0-1.0>,"reason":"<3-5 words>"}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    return MOODS[parsed.mood] ? parsed : heuristicMood(text);
+  } catch(e) {
+    console.warn('API mood failed, using heuristic', e);
+    return heuristicMood(text);
+  }
+}
+
+function heuristicMood(text) {
+  const t = text.toLowerCase();
+  const signals = {
+    joyful:      ['happy','joy','laugh','excit','love','wonderful','amazing','celebrat','fun','great'],
+    melancholic: ['sad','grief','loss','mourn','depress','alone','lonely','miss','pain','sorrow'],
+    tense:       ['stress','anxious','urgent','deadline','panic','crisis','fear','worry','danger'],
+    hopeful:     ['hope','future','dream','will','plan','goal','promis','better','progress','forward'],
+    reflective:  ['think','wonder','ponder','reflect','consider','maybe','perhaps','memory','remem'],
+    analytical:  ['because','therefore','data','result','analysis','research','evidence','conclu'],
+    nostalgic:   ['used to','back when','remember','years ago','childhood','old','once','then'],
+  };
+  const scores = {};
+  for (const [mood, words] of Object.entries(signals)) {
+    scores[mood] = words.filter(w => t.includes(w)).length;
+  }
+  const top = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
+  if (top[1] === 0) return { mood:'neutral', energy:0.5, valence:0.5, reason:'no strong signal' };
+  const p = MOODS[top[0]];
+  return { mood:top[0], energy:p.energy, valence:p.valence, reason:'keyword match' };
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+const notifEl   = document.getElementById('notif');
+const notifTxt  = document.getElementById('notif-text');
+const moodBadge = document.getElementById('mood-badge');
+const moodParam = document.getElementById('mood-params');
+const analyzingEl = document.getElementById('analyzing-text');
+const ringEl    = document.getElementById('ring');
+const countEl   = document.getElementById('count-num');
+const pips      = ['pip1','pip2','pip3'].map(id => document.getElementById(id));
+const pipCls    = ['active-p1','active-p2','active-p3'];
+const allWaveBars = document.querySelectorAll('.wave-bar');
+
+function showAnalyzing(on) {
+  analyzingEl.classList.toggle('visible', on);
+  if (on) { moodBadge.classList.remove('visible'); moodParam.classList.remove('visible'); }
+}
+
+function showMoodResult(moodData) {
+  analyzingEl.classList.remove('visible');
+  const p = MOODS[moodData.mood] || MOODS.neutral;
+  moodBadge.textContent = moodData.mood;
+  moodBadge.className = 'mood-badge visible mood-' + moodData.mood;
+  moodParam.textContent = p.desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
+  moodParam.classList.add('visible');
+}
+
+function updateRing(n) {
+  ringEl.style.strokeDashoffset = 226 * (1 - n/GOAL);
+  countEl.textContent = n;
+  ringEl.style.stroke = ['var(--accent1)','var(--accent2)','var(--accent3)'][n-1];
+}
+
+function setWave(color, on) {
+  allWaveBars.forEach(b => { b.style.background = color; b.classList.toggle('animating', on); });
+}
+
+// ─── Reward trigger ───────────────────────────────────────────────────────────
+async function triggerReward(paraText, index) {
+  ctx(); // wake audio context
+  showAnalyzing(true);
+
+  let moodData;
+  if (isManualOverride && manualMood) {
+    const p = MOODS[manualMood];
+    moodData = { mood:manualMood, energy:p.energy, valence:p.valence, reason:'manual' };
+  } else {
+    moodData = await analyzeMood(paraText);
+  }
+
+  const profile = MOODS[moodData.mood] || MOODS.neutral;
+  showMoodResult(moodData);
+
+  pips[index].classList.add(pipCls[index]);
+  updateRing(index + 1);
+
+  notifEl.className = 'notif playing';
+  notifEl.style.setProperty('--notif-color', profile.color);
+  setWave(profile.color, true);
+
+  const msgs = ['♩ paragraph 1 unlocked','♩♩ paragraph 2 unlocked','♩♩♩ morning complete'];
+  notifTxt.textContent = msgs[index];
+  const titles = ['First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
+  document.getElementById('progress-title').textContent = titles[index];
+
+  playMoodMusic(profile, index);
+
+  if (index === 2) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
+
+  const dur = profile.energy > 0.7 ? 2200 : profile.energy < 0.3 ? 4500 : 3200;
+  setTimeout(() => {
+    setWave(profile.color, false);
+    notifEl.classList.remove('playing');
+    notifTxt.textContent = index < 2 ? `paragraph ${index+1} done — ${GOAL-index-1} to go` : 'goal reached — well done';
+  }, dur);
+}
+
+// ─── Paragraph detection ──────────────────────────────────────────────────────
+function getLatestPara(text) {
+  return text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).slice(-1)[0] || text;
+}
+
+document.getElementById('writer').addEventListener('keydown', () => ctx());
+document.getElementById('writer').addEventListener('input', () => {
+  const text = document.getElementById('writer').value;
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
+  const doubles = (text.match(/\n\s*\n/g) || []).length;
+  document.getElementById('para-count-meta').textContent = doubles + ' paragraph' + (doubles!==1?'s':'') + ' detected';
+  if (doubles > lastNewlineCount && completedCount < GOAL) {
+    lastNewlineCount = doubles;
+    triggerReward(getLatestPara(text), completedCount);
+    completedCount++;
+  }
+});
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function toggleSettings() {
+  document.getElementById('settings-toggle').classList.toggle('open');
+  document.getElementById('settings-panel').classList.toggle('open');
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val || !val.startsWith('sk-')) {
+    document.getElementById('key-status').textContent = 'invalid key format';
+    document.getElementById('key-status').className = 'key-status err';
+    return;
+  }
+  apiKey = val;
+  localStorage.setItem('pm_api_key', val);
+  document.getElementById('key-status').textContent = 'key saved — AI mood analysis active';
+  document.getElementById('key-status').className = 'key-status ok';
+}
+
+function toggleManualOverride(on) {
+  isManualOverride = on;
+  document.getElementById('manual-mood-wrap').classList.toggle('visible', on);
+}
+
+function selectMood(btn) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  manualMood = btn.dataset.mood;
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────────
+document.getElementById('reset-btn').addEventListener('click', () => {
+  document.getElementById('writer').value = '';
+  completedCount = 0; lastNewlineCount = 0;
+  countEl.textContent = '0'; ringEl.style.strokeDashoffset = '226'; ringEl.style.stroke = 'var(--accent1)';
+  pips.forEach(p => { p.className = 'para-pip'; });
+  setWave('var(--accent1)', false);
+  notifEl.className = 'notif';
+  notifTxt.textContent = 'waiting for your first paragraph...';
+  moodBadge.className = 'mood-badge';
+  moodParam.classList.remove('visible');
+  analyzingEl.classList.remove('visible');
+  document.getElementById('progress-title').textContent = 'Start writing.';
+  document.getElementById('word-count').textContent = '0 words';
+  document.getElementById('para-count-meta').textContent = '0 paragraphs detected';
+  document.getElementById('goal-banner').classList.remove('show');
+  document.getElementById('writer').focus();
+});
+
+document.getElementById('writer').focus();
+</script>
+</body>
+</html>
