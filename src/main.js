@@ -71,7 +71,8 @@ function setWave(color, on) {
 
 // ─── Reward trigger ───────────────────────────────────────────────────────────
 // index: paragraph number toward the goal (null for an Enter on a blank line)
-async function triggerReward(paraText, index, playIndex) {
+// edit: true when an earlier paragraph was changed — its mood and music are redone in place
+async function triggerReward(paraText, index, playIndex, edit = false) {
   ctx(); // wake audio context
   showAnalyzing(true);
   const gen = sessionGen;
@@ -91,7 +92,7 @@ async function triggerReward(paraText, index, playIndex) {
   const onGoal = index !== null && index < GOAL;
   if (onGoal) {
     pips[index].classList.add(pipCls[index]);
-    updateRing(index + 1);
+    if (!edit) updateRing(index + 1);
   }
 
   notifEl.className = 'notif playing';
@@ -99,12 +100,15 @@ async function triggerReward(paraText, index, playIndex) {
   setWave(profile.color, true);
 
   const msgs = ['♩ paragraph 1 unlocked','♩♩ paragraph 2 unlocked','♩♩♩ morning complete'];
-  notifTxt.textContent = onGoal ? msgs[index] : (index === null ? '♩ new line' : `♩ paragraph ${index+1}`);
+  notifTxt.textContent = edit ? `♩ paragraph ${index+1} updated`
+    : onGoal ? msgs[index] : (index === null ? '♩ new line' : `♩ paragraph ${index+1}`);
   const titles = ['First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
-  if (onGoal) document.getElementById('progress-title').textContent = titles[index];
+  if (onGoal && !edit) document.getElementById('progress-title').textContent = titles[index];
 
   // Paragraph 3 gets the finale; everything else cycles through the regular voicings
-  const musicIndex = index === 2 ? 2 : (playIndex % 3 === 2 ? 3 : playIndex % 3);
+  // An edited paragraph keeps its original voicing
+  const musicIndex = edit && sessionTracks[index] ? sessionTracks[index].musicIndex
+    : index === 2 ? 2 : (playIndex % 3 === 2 ? 3 : playIndex % 3);
   if (index !== null) { sessionTracks[index] = { profile, musicIndex, moodData }; scheduleSave(0); }
   if (onGoal) {
     pips[index].classList.add('done');
@@ -114,7 +118,7 @@ async function triggerReward(paraText, index, playIndex) {
   const token = ++playToken;
   playMoodMusic(profile, musicIndex);
 
-  if (index === 2) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
+  if (index === 2 && !edit) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
 
   const dur = profile.energy > 0.7 ? 2200 : profile.energy < 0.3 ? 4500 : 3200;
   setTimeout(() => {
@@ -175,8 +179,15 @@ document.getElementById('writer').addEventListener('input', (e) => {
   const justFinished = (before[before.length - 1] || '').trim();
   const latest = before.map(l => l.trim()).filter(Boolean).slice(-1)[0] || '';
   if (justFinished) {
-    triggerReward(justFinished, completedCount, enterCount++);
-    completedCount++;
+    // Which paragraph is this? Count the lines with text up to the cursor. If it's one that
+    // was already counted (the writer went back to edit it), redo that one instead of adding a new one.
+    const position = before.filter(l => l.trim()).length - 1;
+    if (position < completedCount) {
+      triggerReward(justFinished, position, enterCount++, true);
+    } else {
+      triggerReward(justFinished, completedCount, enterCount++);
+      completedCount++;
+    }
   } else {
     triggerReward(latest, null, enterCount++);
   }
