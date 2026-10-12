@@ -2,7 +2,7 @@ import { ROOT_FREQ } from './moods.js';
 
 let audioCtx = null;
 
-// ─── Audio engine v0.4 — choir + organ + cathedral reverb + delay ─────────────
+// ─── Audio engine v0.5 — choir + organ + chorus + cathedral reverb + two echoes ─────────────
 
 export function ctx() {
   // iPhone: play even when the ring/silent switch is on (Safari 16.4+)
@@ -152,6 +152,44 @@ function getChain(c) {
 
   conv.connect(reverbGain);
 
+  // Chorus — two short delays whose times wobble slowly, panned left and right.
+  // The slightly-out-of-step copies make the voices shimmer and sound wider.
+  const chorusOut = c.createGain();
+  chorusOut.gain.value = 0.4;
+  [[0.018, 0.71, -0.7], [0.025, 0.93, 0.7]].forEach(([base, rate, pan]) => {
+    const d = c.createDelay(0.1);
+    d.delayTime.value = base;
+    const lfo = c.createOscillator();
+    const depth = c.createGain();
+    lfo.frequency.value = rate;
+    depth.gain.value = 0.003;              // ±3ms of wobble
+    lfo.connect(depth); depth.connect(d.delayTime); lfo.start();
+    const panner = c.createStereoPanner();
+    panner.pan.value = pan;
+    phaserOut.connect(d); d.connect(panner); panner.connect(chorusOut);
+  });
+  chorusOut.connect(dry);
+  chorusOut.connect(conv);
+
+  // Second echo — slower and softer than the first, a few distant repeats
+  const echo = c.createDelay(3.0);
+  echo.delayTime.value = 0.62;             // updated per-chord in playMoodMusic
+  const echoFB = c.createGain();
+  echoFB.gain.value = 0.35;
+  const echoLP = c.createBiquadFilter();
+  echoLP.type = 'lowpass'; echoLP.frequency.value = 2400;
+  const echoSend = c.createGain();
+  echoSend.gain.value = 0.3;
+  const echoOut = c.createGain();
+  echoOut.gain.value = 0.5;
+  phaserOut.connect(echoSend);
+  echoSend.connect(echo);
+  echo.connect(echoLP);
+  echoLP.connect(echoFB);
+  echoFB.connect(echo);
+  echoLP.connect(echoOut);
+  echoOut.connect(master);
+
   dry.connect(master);
   reverbGain.connect(master);
   // Limiter — keeps the doubled reverb from clipping
@@ -164,7 +202,7 @@ function getChain(c) {
   limiter.connect(trim);
   trim.connect(c.destination);
 
-  c._chain = { ctx: c, bus, delay, dry, reverbGain, master };
+  c._chain = { ctx: c, bus, delay, echo, dry, reverbGain, master };
   return c._chain;
 }
 
@@ -176,8 +214,10 @@ function getChain(c) {
 //   - LFO vibrato via OscillatorNode modulating frequency (kicks in after onset)
 function choirVoice(c, bus, freq, startT, dur, gain, formantFreq = 800, vibratoDepth = 3.5) {
   const v = vol();
-  const attack = 0.72 + Math.random() * 0.14;   // slower breath — epic swell in
-  const release = 0.9;
+  let attack = 0.72 + Math.random() * 0.14;   // slower breath — epic swell in
+  let release = 0.9;
+  // Short notes squeeze the swell and fade to fit, so nothing is scheduled before the note starts
+  if (attack + release > dur) { const k = dur / (attack + release); attack *= k; release *= k; }
   const sectionSize = 5;
   const detuneSpreads = [-14, -6, 0, 6, 14];     // cents per singer
 
@@ -325,6 +365,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx()) {
 
   // Set delay time to dotted-eighth at current tempo (feels musical not slapback)
   chain.delay.delayTime.setValueAtTime(beat * 0.75, T);
+  chain.echo.delayTime.setValueAtTime(Math.min(2.5, beat * 1.5), T);   // second echo: a dotted quarter
 
   // ── Epic master fade-in: bus swells from silence over 1.4s ───────────────
   chain.bus.gain.cancelScheduledValues(T);

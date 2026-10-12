@@ -91,11 +91,55 @@ function encodeWav(buffers) {
   return new Blob([view], { type: 'audio/wav' });
 }
 
+// Loudness in 50ms windows, so we can find where each paragraph's music starts and ends
+function envelope(b, win) {
+  const chans = [...Array(b.numberOfChannels)].map((_, ch) => b.getChannelData(ch));
+  const env = [];
+  for (let i = 0; i < b.length; i += win) {
+    let m = 0;
+    for (const d of chans) for (let j = i; j < Math.min(i + win, b.length); j++) m = Math.max(m, Math.abs(d[j]));
+    env.push(m);
+  }
+  return env;
+}
+
+// Join the paragraphs with no pauses: skip any silence before each one, and start the next
+// paragraph as soon as the current one's music fades, letting its echo ring on underneath
+function joinSeamlessly(buffers) {
+  const sr = buffers[0].sampleRate, win = Math.round(sr * 0.05);
+  const parts = buffers.map(b => {
+    const env = envelope(b, win);
+    const peak = Math.max(...env) || 1;
+    const lead = Math.max(0, env.findIndex(v => v > peak * 0.01));
+    let musicEnd = env.length - 1;
+    while (musicEnd > lead && env[musicEnd] < peak * 0.15) musicEnd--;
+    let tailEnd = env.length - 1;
+    while (tailEnd > musicEnd && env[tailEnd] < peak * 0.003) tailEnd--;
+    return { b, from: lead * win, music: (musicEnd + 1 - lead) * win, to: Math.min(b.length, (tailEnd + 1) * win) };
+  });
+
+  let at = 0;
+  const starts = parts.map(p => { const s = at; at += p.music; return s; });
+  const frames = Math.max(...parts.map((p, i) => starts[i] + p.to - p.from));
+  const out = [new Float32Array(frames), new Float32Array(frames)];
+  parts.forEach((p, i) => {
+    for (let ch = 0; ch < 2; ch++) {
+      const src = p.b.getChannelData(Math.min(ch, p.b.numberOfChannels - 1));
+      const dst = out[ch];
+      for (let j = p.from; j < p.to; j++) dst[starts[i] + j - p.from] += src[j];
+    }
+  });
+  // Short fade at the very end so it doesn't click
+  const fade = Math.min(frames, Math.round(sr * 0.5));
+  for (let ch = 0; ch < 2; ch++) for (let j = 0; j < fade; j++) out[ch][frames - 1 - j] *= j / fade;
+  return { sampleRate: sr, length: frames, numberOfChannels: 2, getChannelData: ch => out[ch] };
+}
+
 export async function makeWavBlob(sessionTracks) {
   const tracks = sessionTracks.filter(Boolean);
   const buffers = [];
   for (const t of tracks) buffers.push(await renderTrack(t));
-  return encodeWav(buffers);
+  return encodeWav([joinSeamlessly(buffers)]);
 }
 
 export function canShareFiles(files) {
