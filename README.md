@@ -55,6 +55,8 @@ Known limits: the website shares the bri-an-pmp.github.io address with other Git
 
 Install Node.js 22, then run npm install. Use npm run dev to work on the site locally, and npm run build to create the production files in dist/. For the iPhone app (Xcode required), run npm run ios to copy the latest build into the iOS project, then open ios/App/App.xcodeproj in Xcode. Mood detection works without a key; for Claude-powered mood detection, open *music settings → Smarter mood matching* and follow the steps there. Run npm run lint and npm audit before publishing.
 
+AI coding agents (Cursor, Claude Code and others) should read AGENTS.md first: it covers the commands, the code map and the project's rules.
+
 ## Deployment
 
 The website is deployed to GitHub Pages (https://bri-an-pmp.github.io/the-morning-frequency/) by a GitHub Actions workflow that builds the site on every push to main. To host your own copy, fork the repo and set Settings → Pages → Source to GitHub Actions. The iPhone app is in progress for the Apple App Store.
