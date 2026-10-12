@@ -79,7 +79,7 @@ export async function renderTrack(t) {
   const seconds = 4.0 + (1 - t.profile.energy) * 2.0 + 7.0;   // chord + full fade tail
   const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const oc = new Offline(2, Math.ceil(sr * seconds), sr);
-  playMoodMusic(t.profile, t.musicIndex, oc);
+  playMoodMusic(t.profile, t.musicIndex, oc, t.key || null);
   return oc.startRendering();
 }
 
@@ -187,7 +187,7 @@ export async function makeStreakWavBlob(streakEntries, milestone, onProgress = (
   const tracks = [...streakEntries]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .flatMap(e => (e.tracks || []).filter(Boolean))
-    .map(t => ({ musicIndex: t.musicIndex, profile: MOODS[t.moodData?.mood] || MOODS.neutral }));
+    .map(t => ({ musicIndex: t.musicIndex, key: t.key || null, profile: MOODS[t.moodData?.mood] || MOODS.neutral }));
   const total = tracks.length + (milestone ? 1 : 0);
   const buffers = [];
   for (const t of tracks) {

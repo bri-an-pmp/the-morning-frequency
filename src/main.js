@@ -5,7 +5,7 @@ import '@fontsource/dm-mono/400.css';
 import '@fontsource/nunito/400.css';
 import '@fontsource/nunito/600.css';
 import './styles.css';
-import { MOODS, analyzeMood } from './moods.js';
+import { MOODS, analyzeMood, describeKey } from './moods.js';
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
@@ -14,6 +14,7 @@ import {
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
 import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
 import { makeStory } from './story.js';
+import { initCircle, keyForStep, setCircleStep } from './circle.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -55,12 +56,13 @@ function showAnalyzing(on) {
   if (on) { moodBadge.classList.remove('visible'); moodParam.classList.remove('visible'); }
 }
 
-function showMoodResult(moodData) {
+function showMoodResult(moodData, key = null) {
   analyzingEl.classList.remove('visible');
   const p = MOODS[moodData.mood] || MOODS.neutral;
   moodBadge.textContent = moodData.mood;
   moodBadge.className = 'mood-badge visible mood-' + moodData.mood;
-  moodParam.textContent = p.desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
+  const desc = key ? describeKey(p, key) + ' · ' + p.desc.split(' · ').slice(2).join(' · ') : p.desc;
+  moodParam.textContent = desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
   moodParam.classList.add('visible');
 }
 
@@ -92,7 +94,11 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   if (gen !== sessionGen) return;
 
   const profile = MOODS[moodData.mood] || MOODS.neutral;
-  showMoodResult(moodData);
+  // Circle of fifths: each paragraph takes the next key round the circle. An edited paragraph
+  // keeps its key; a blank-line Enter replays the latest paragraph's key.
+  const key = edit && sessionTracks[index] ? (sessionTracks[index].key || null)
+    : keyForStep(index !== null ? index : Math.max(0, completedCount - 1));
+  showMoodResult(moodData, key);
 
   const onGoal = index !== null && index < GOAL;
   if (onGoal) {
@@ -114,14 +120,15 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   // An edited paragraph keeps its original voicing
   const musicIndex = edit && sessionTracks[index] ? sessionTracks[index].musicIndex
     : index === 2 ? 2 : (playIndex % 3 === 2 ? 3 : playIndex % 3);
-  if (index !== null) { sessionTracks[index] = { profile, musicIndex, moodData }; scheduleSave(0); }
+  if (index !== null) { sessionTracks[index] = { profile, musicIndex, moodData, key }; scheduleSave(0); }
+  setCircleStep(completedCount);
   if (onGoal) {
     pips[index].classList.add('done');
     pips[index].title = `replay paragraph ${index+1} — ${moodData.mood}`;
     document.getElementById('pip-hint').classList.add('visible');
   }
   const token = ++playToken;
-  playMoodMusic(profile, musicIndex);
+  playMoodMusic(profile, musicIndex, undefined, key);
   if (index !== null && !edit) checkStreakMilestone(gen);
 
   if (index === 2 && !edit) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
@@ -159,13 +166,13 @@ let sessionTracks = [];   // per counted paragraph: { profile, musicIndex, moodD
 pips.forEach((pip, i) => pip.addEventListener('click', () => {
   const t = sessionTracks[i];
   if (!t) return;
-  showMoodResult(t.moodData);
+  showMoodResult(t.moodData, t.key);
   notifEl.className = 'notif playing';
   notifEl.style.setProperty('--notif-color', t.profile.color);
   notifTxt.textContent = `♩ replaying paragraph ${i+1}`;
   setWave(t.profile.color, true);
   const token = ++playToken;
-  playMoodMusic(t.profile, t.musicIndex);
+  playMoodMusic(t.profile, t.musicIndex, undefined, t.key || null);
   setTimeout(() => { if (token === playToken) { setWave(t.profile.color, false); notifEl.classList.remove('playing'); } }, 3500);
 }));
 document.getElementById('writer').addEventListener('input', (e) => {
@@ -267,6 +274,7 @@ function clearSession() {
   document.getElementById('para-count-meta').textContent = '0 paragraphs detected';
   document.getElementById('goal-banner').classList.remove('show');
   document.getElementById('finish-panel').classList.remove('show');
+  setCircleStep(0);
 }
 
 // ─── Journal: auto-save, history, calendar ────────────────────────────────────
@@ -313,7 +321,7 @@ async function persist() {
     text,
     completedCount,
     enterCount,
-    tracks: sessionTracks.map(t => t ? { musicIndex: t.musicIndex, moodData: t.moodData } : null),
+    tracks: sessionTracks.map(t => t ? { musicIndex: t.musicIndex, moodData: t.moodData, key: t.key || null } : null),
   });
   renderSidebars();
 }
@@ -444,6 +452,7 @@ async function openEntry(entry) {
   prevText = entry.text;
   completedCount = entry.completedCount || 0;
   enterCount = entry.enterCount || 0;
+  setCircleStep(completedCount);
   sessionTracks = (entry.tracks || []).map(t => t ? { ...t, profile: MOODS[t.moodData?.mood] || MOODS.neutral } : null);
 
   // Restore progress: ring, bars (replayable), title, banner, counts
@@ -641,6 +650,8 @@ document.getElementById('finish-btn').addEventListener('click', () => {
   panel.classList.add('show');
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
+
+initCircle();
 
 (async () => {
   entries = await loadEntries();

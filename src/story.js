@@ -3,6 +3,7 @@
 // Facebook stories. Falls back to a still picture where the device can't record video.
 import { ctx } from './audio.js';
 import { renderTrack } from './export.js';
+import { describeKey } from './moods.js';
 
 const W = 1080, H = 1920, FPS = 30;
 const SEG = 5;          // seconds each paragraph leads before the next one comes in
@@ -137,7 +138,7 @@ function makeFrameDrawer(g, opts) {
     while (i < starts.length - 1 && t >= starts[i + 1]) i++;
     const into = t - starts[i];
     const color = i > 0 && into < 1 ? mixHex(colors[i - 1], colors[i], into) : colors[i];
-    const profile = tracks[i].profile;
+    const { profile, key } = tracks[i];
 
     let level = 0;
     if (analyser) {
@@ -179,7 +180,7 @@ function makeFrameDrawer(g, opts) {
     g.fillText(profile.label, cx, cy + 12);
     g.fillStyle = '#4b6482';
     g.font = `400 28px ${MONO}`;
-    g.fillText(profile.desc.split(' · ').slice(0, 2).join(' · '), cx, cy + 62);
+    g.fillText(describeKey(profile, key), cx, cy + 62);
 
     // One dot per paragraph; the playing one is bigger
     const gap = 70, x0 = cx - ((tracks.length - 1) * gap) / 2;

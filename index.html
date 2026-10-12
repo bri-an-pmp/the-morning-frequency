@@ -134,6 +134,7 @@
       <div class="setting-label">key preference</div>
       <select id="key-pref">
         <option value="auto">auto (from mood)</option>
+        <option value="circle">circle of fifths — pick a home key</option>
         <option value="C">C major / A minor</option>
         <option value="G">G major / E minor</option>
         <option value="D">D major / B minor</option>
@@ -151,6 +152,14 @@
         <option value="melodic">melodic — phrase-first</option>
         <option value="rhythmic">rhythmic — pulse-driven</option>
       </select>
+    </div>
+
+    <div class="circle-wrap" id="circle-wrap">
+      <div class="cof-dirs" role="group" aria-label="Direction around the circle">
+        <button type="button" class="cof-dir" data-dir="1">↻ clockwise — brighter, each step up a fifth</button>
+        <button type="button" class="cof-dir" data-dir="-1">↺ counter-clockwise — settles home, each step down a fifth</button>
+      </div>
+      <div class="circle-legend" id="circle-legend"></div>
     </div>
 
     <details class="api-key-row ai-mood">

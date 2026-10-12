@@ -355,10 +355,18 @@ const MELODIES = {
 };
 
 // ── Main music renderer ───────────────────────────────────────────────────────
-// c defaults to the live speakers; pass an OfflineAudioContext to render to a file
-export function playMoodMusic(profile, paraIndex, c = ctx()) {
+// Minor keys (inner ring of the circle of fifths): lower the 3rd, 6th and 7th
+function toMinor(semi) {
+  const pc = ((semi % 12) + 12) % 12;
+  return pc === 4 || pc === 9 || pc === 11 ? semi - 1 : semi;
+}
+
+// c defaults to the live speakers; pass an OfflineAudioContext to render to a file.
+// key: { root, minor } from the circle of fifths, or null to use the mood / key preference.
+export function playMoodMusic(profile, paraIndex, c = ctx(), key = null) {
   const chain = getChain(c);
-  const root = getRootFreq(profile);
+  const root = key ? key.root : getRootFreq(profile);
+  const tone = semi => (key && key.minor ? toMinor(semi) : semi);
   const texture = getTexture(profile);
   const beat = 60 / getTempo(profile);
   const T = c.currentTime + 0.12;
@@ -416,7 +424,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx()) {
   });
 
   const voicings = CHORD_VOICINGS[profile.label] || CHORD_VOICINGS.neutral;
-  const voicing  = voicings[paraIndex % voicings.length];
+  const voicing  = voicings[paraIndex % voicings.length].map(tone);
 
   // ── Bass foundation — deep organ sub-tone ────────────────────────────────
   organVoice(c, chain.bus, root / 2, T, chordDur * 1.15, 0.09, profile.label);
@@ -446,7 +454,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx()) {
 
   if (texture === 'melodic') {
     // Melody sung by choir, one octave up, lighter vibrato
-    const mel = (MELODIES[profile.label] || MELODIES.neutral)[paraIndex % 3];
+    const mel = (MELODIES[profile.label] || MELODIES.neutral)[paraIndex % 3].map(tone);
     const noteLen = beat * 0.62;
     mel.forEach((semi, i) => {
       const mf = root * Math.pow(2, (semi + 12) / 12);
@@ -470,7 +478,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx()) {
 
   // ── Paragraph 3 finale: full choir swell + resolution chord ──────────────
   if (paraIndex === 2) {
-    const finaleVoicing = [0, 4, 7, 11, 14, 17]; // maj11 — maximum richness
+    const finaleVoicing = [0, 4, 7, 11, 14, 17].map(tone); // maj11 — maximum richness
     const fT = T + chordDur * 0.62;
     finaleVoicing.forEach((semi, i) => {
       const ff = root * Math.pow(2, semi / 12);

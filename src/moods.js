@@ -67,3 +67,11 @@ export function heuristicMood(text) {
   const p = MOODS[top[0]];
   return { mood:top[0], energy:p.energy, valence:p.valence, reason:'keyword match' };
 }
+
+// "C major · 138bpm" — or, with a circle-of-fifths key, that key with the mood's tempo
+export function describeKey(profile, key) {
+  const parts = profile.desc.split(' · ');
+  if (!key) return parts.slice(0, 2).join(' · ');
+  const quality = key.minor ? 'minor' : parts[0].split(' ').slice(1).join(' ');
+  return `${key.name} ${quality} · ${parts[1]}`;
+}
