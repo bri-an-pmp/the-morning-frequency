@@ -122,42 +122,49 @@ function envelope(b, win) {
 }
 
 // Join the paragraphs with no pauses: skip any silence before each one, and start the next
-// paragraph as soon as the current one's music fades, letting its echo ring on underneath
-function joinSeamlessly(buffers) {
-  const sr = buffers[0].sampleRate, win = Math.round(sr * 0.05);
-  const parts = buffers.map(b => {
-    const env = envelope(b, win);
-    const peak = Math.max(...env) || 1;
-    const lead = Math.max(0, env.findIndex(v => v > peak * 0.01));
-    let musicEnd = env.length - 1;
-    while (musicEnd > lead && env[musicEnd] < peak * 0.15) musicEnd--;
-    let tailEnd = env.length - 1;
-    while (tailEnd > musicEnd && env[tailEnd] < peak * 0.003) tailEnd--;
-    return { b, from: lead * win, music: (musicEnd + 1 - lead) * win, to: Math.min(b.length, (tailEnd + 1) * win) };
-  });
-
-  let at = 0;
-  const starts = parts.map(p => { const s = at; at += p.music; return s; });
-  const frames = Math.max(...parts.map((p, i) => starts[i] + p.to - p.from));
-  const out = [new Float32Array(frames), new Float32Array(frames)];
-  parts.forEach((p, i) => {
-    for (let ch = 0; ch < 2; ch++) {
-      const src = p.b.getChannelData(Math.min(ch, p.b.numberOfChannels - 1));
-      const dst = out[ch];
-      for (let j = p.from; j < p.to; j++) dst[starts[i] + j - p.from] += src[j];
-    }
-  });
-  // Short fade at the very end so it doesn't click
-  const fade = Math.min(frames, Math.round(sr * 0.5));
-  for (let ch = 0; ch < 2; ch++) for (let j = 0; j < fade; j++) out[ch][frames - 1 - j] *= j / fade;
-  return { sampleRate: sr, length: frames, numberOfChannels: 2, getChannelData: ch => out[ch] };
+// paragraph as soon as the current one's music fades, letting its echo ring on underneath.
+// Paragraphs are added one at a time and then let go, so long recordings don't fill the memory.
+function seamlessJoiner() {
+  let sr = 0, win = 0, cap = 0, used = 0, at = 0;
+  let out = [new Float32Array(0), new Float32Array(0)];
+  const grow = need => {
+    if (need <= cap) return;
+    cap = Math.max(need, Math.ceil(cap * 1.5), sr * 30);
+    out = out.map(old => { const a = new Float32Array(cap); a.set(old.subarray(0, used)); return a; });
+  };
+  return {
+    add(b) {
+      if (!sr) { sr = b.sampleRate; win = Math.round(sr * 0.05); }
+      const env = envelope(b, win);
+      const peak = Math.max(...env) || 1;
+      const lead = Math.max(0, env.findIndex(v => v > peak * 0.01));
+      let musicEnd = env.length - 1;
+      while (musicEnd > lead && env[musicEnd] < peak * 0.15) musicEnd--;
+      let tailEnd = env.length - 1;
+      while (tailEnd > musicEnd && env[tailEnd] < peak * 0.003) tailEnd--;
+      const from = lead * win, to = Math.min(b.length, (tailEnd + 1) * win);
+      grow(at + (to - from));
+      for (let ch = 0; ch < 2; ch++) {
+        const src = b.getChannelData(Math.min(ch, b.numberOfChannels - 1)), dst = out[ch];
+        for (let j = from; j < to; j++) dst[at + j - from] += src[j];
+      }
+      used = Math.max(used, at + (to - from));
+      at += (musicEnd + 1 - lead) * win;
+    },
+    finish() {
+      // Short fade at the very end so it doesn't click
+      const fade = Math.min(used, Math.round(sr * 0.5));
+      for (let ch = 0; ch < 2; ch++) for (let j = 0; j < fade; j++) out[ch][used - 1 - j] *= j / fade;
+      return { sampleRate: sr, length: used, numberOfChannels: 2, getChannelData: ch => out[ch].subarray(0, used) };
+    },
+  };
 }
 
 export async function makeWavBlob(sessionTracks) {
   const tracks = sessionTracks.filter(Boolean);
-  const buffers = [];
-  for (const t of tracks) buffers.push(await renderTrack(t));
-  return encodeWav([joinSeamlessly(buffers)]);
+  const joiner = seamlessJoiner();
+  for (const t of tracks) joiner.add(await renderTrack(t));
+  return encodeWav([joiner.finish()]);
 }
 
 export function canShareFiles(files) {
@@ -183,18 +190,23 @@ async function renderStreakSound(days) {
 }
 
 // streakEntries: the entries in the streak (any order). onProgress(done, total)
+// Long streaks use the most recent STREAK_MIX_MAX paragraphs (about five minutes), which keeps
+// the file a sensible size and stops phones running out of memory while it's made.
+export const STREAK_MIX_MAX = 60;
 export async function makeStreakWavBlob(streakEntries, milestone, onProgress = () => {}) {
   const tracks = [...streakEntries]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .flatMap(e => (e.tracks || []).filter(Boolean))
+    .slice(-STREAK_MIX_MAX)
     .map(t => ({ musicIndex: t.musicIndex, key: t.key || null, profile: moodProfile(t.moodData?.mood) }));
   const total = tracks.length + (milestone ? 1 : 0);
-  const buffers = [];
+  const joiner = seamlessJoiner();
+  let done = 0;
   for (const t of tracks) {
-    buffers.push(await renderTrack(t));
-    onProgress(buffers.length, total);
+    joiner.add(await renderTrack(t));
+    onProgress(++done, total);
   }
-  if (milestone) buffers.push(await renderStreakSound(milestone));
+  if (milestone) joiner.add(await renderStreakSound(milestone));
   onProgress(total, total);
-  return encodeWav([joinSeamlessly(buffers)]);
+  return encodeWav([joiner.finish()]);
 }

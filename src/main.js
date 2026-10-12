@@ -9,7 +9,7 @@ import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeK
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
-  makeDocxBlob, makePdfBlob, makeWavBlob, makeStreakWavBlob, shareFile,
+  makeDocxBlob, makePdfBlob, makeWavBlob, makeStreakWavBlob, STREAK_MIX_MAX, shareFile,
 } from './export.js';
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
 import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
@@ -91,10 +91,20 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   if (isManualOverride && manualMood) {
     const p = MOODS[manualMood];
     moodData = { mood:manualMood, energy:p.energy, valence:p.valence, reason:'manual' };
+  } else if (index === null) {
+    // A blank-line Enter replays the latest paragraph's mood — no need to ask Claude (or pay) again
+    const last = sessionTracks.filter(Boolean).pop();
+    moodData = last ? { ...last.moodData, reason: 'blank line' }
+      : { mood:DEFAULT_MOOD, energy:MOODS[DEFAULT_MOOD].energy, valence:MOODS[DEFAULT_MOOD].valence, reason:'blank line' };
   } else {
-    moodData = paraText ? await analyzeMood(paraText, apiKey) : { mood:DEFAULT_MOOD, energy:MOODS[DEFAULT_MOOD].energy, valence:MOODS[DEFAULT_MOOD].valence, reason:'blank line' };
+    moodData = await analyzeMood(paraText, apiKey);
   }
   if (gen !== sessionGen) return;
+  if (moodData.apiError) {
+    // Don't fail silently: say why Claude wasn't used this time
+    showKeyStatus(`Claude wasn't used just now (${moodData.apiError}), so word matching picked the mood.`, 'err');
+    delete moodData.apiError;
+  }
 
   const profile = moodProfile(moodData.mood);
   // Circle of fifths: each paragraph takes the next key round the circle. An edited paragraph
@@ -148,7 +158,11 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
 }
 
 // ─── Paragraph detection ──────────────────────────────────────────────────────
-document.getElementById('writer').addEventListener('keydown', () => ctx());
+document.getElementById('writer').addEventListener('keydown', e => {
+  ctx();
+  // Holding Enter down would fire dozens of pieces of music a second and overload the audio
+  if (e.key === 'Enter' && e.repeat) e.preventDefault();
+});
 
 // iOS only lets audio start from a tap — unlock it with a silent sound on the first touch
 function unlockAudio() {
@@ -193,7 +207,6 @@ document.getElementById('writer').addEventListener('input', (e) => {
   if (!newlineTyped) return;
   const before = text.slice(0, el.selectionStart).split('\n').slice(0, -1);
   const justFinished = (before[before.length - 1] || '').trim();
-  const latest = before.map(l => l.trim()).filter(Boolean).slice(-1)[0] || '';
   if (justFinished) {
     // Which paragraph is this? Count the lines with text up to the cursor. If it's one that
     // was already counted (the writer went back to edit it), redo that one instead of adding a new one.
@@ -205,7 +218,7 @@ document.getElementById('writer').addEventListener('input', (e) => {
       completedCount++;
     }
   } else {
-    triggerReward(latest, null, enterCount++);
+    triggerReward('', null, enterCount++);
   }
 });
 
@@ -402,7 +415,9 @@ function openStreakPanel(streak) {
   const inStreak = streakEntries(entries);
   const paras = inStreak.reduce((n, e) => n + (e.tracks || []).filter(Boolean).length, 0);
   streakEls.title.textContent = `✦ ${streak}-day streak · ${STREAK_SOUNDS[milestone].name}`;
-  streakEls.sub.textContent = `Your reward: every frequency from your streak — ${paras} paragraph${paras !== 1 ? 's' : ''} over ${streak} days — in one piece, ending with your ${milestone}-day streak sound.`;
+  streakEls.sub.textContent = paras > STREAK_MIX_MAX
+    ? `Your reward: your streak's frequencies in one piece — the latest ${STREAK_MIX_MAX} of your ${paras} paragraphs over ${streak} days — ending with your ${milestone}-day streak sound.`
+    : `Your reward: every frequency from your streak — ${paras} paragraph${paras !== 1 ? 's' : ''} over ${streak} days — in one piece, ending with your ${milestone}-day streak sound.`;
   const btns = [streakEls.play, streakEls.download, streakEls.share];
   btns.forEach(b => { b.disabled = true; });
   streakEls.play.textContent = 'preparing...';
@@ -496,14 +511,23 @@ async function openEntry(entry) {
 
 async function removeEntry(entry) {
   if (!confirm('Delete this entry? This can\'t be undone.')) return;
-  entries = await deleteEntry(entry.id);
   if (entry.id === currentId) {
+    // Clear the page first, so a pending autosave can't bring the deleted entry back
+    clearTimeout(saveTimer);
     clearSession();
     currentId = null; currentCreatedAt = null;
     showDate(new Date());
   }
+  entries = await deleteEntry(entry.id);
   renderSidebars();
 }
+
+// Another tab saved or deleted an entry: refresh the lists so they match
+window.addEventListener('storage', async e => {
+  if (e.key !== 'CapacitorStorage.tmf_entries') return;
+  entries = await loadEntries();
+  renderSidebars();
+});
 
 document.getElementById('reset-btn').addEventListener('click', startNewEntry);
 document.getElementById('new-entry-btn').addEventListener('click', startNewEntry);
@@ -623,7 +647,9 @@ storyEls.make.addEventListener('click', async () => {
   } catch (e) {
     console.error(e);
     storyEls.make.textContent = 'make story video';
-    alert('Sorry, the video couldn\'t be made on this device. Try again, or use a different browser.');
+    alert(e && e.name === 'StoryInterrupted'
+      ? 'The video stopped because you left this screen. Keep the app open for the 20 seconds it takes, then tap make story video again.'
+      : 'Sorry, the video couldn\'t be made on this device. Try again, or use a different browser.');
   } finally {
     storyEls.make.disabled = false; storyEls.line.disabled = false;
   }

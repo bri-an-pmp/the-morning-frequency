@@ -18,7 +18,14 @@ let suppressClick = false;  // a drag that ends on a key shouldn't also count as
 const mod12 = n => ((n % 12) + 12) % 12;
 
 function load() {
-  try { state = { ...state, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch (e) { /* defaults */ }
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || '{}') || {};
+    state = {
+      pos: Number.isInteger(s.pos) && s.pos >= 0 && s.pos < 12 ? s.pos : null,
+      minor: s.minor === true,
+      dir: s.dir === -1 ? -1 : 1,
+    };
+  } catch (e) { /* defaults */ }
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* not essential */ }

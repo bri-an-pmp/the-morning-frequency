@@ -76,10 +76,13 @@ export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
 // The days (as "YYYY-MM-DD") in the current streak, newest first
 function streakDayKeys(entries, now = new Date()) {
   const days = new Set(entries.map(e => dayKey(e.createdAt)));
-  let d = startOfDay(now);
-  if (!days.has(dayKey(d))) d = new Date(d - DAY_MS);   // today not written yet doesn't break the streak
+  // Step back one calendar day at a time. (Subtracting 24 hours skips a day when the clocks
+  // spring forward, which wrongly broke streaks once a year.)
+  const d = startOfDay(now);
+  const back = () => d.setDate(d.getDate() - 1);
+  if (!days.has(dayKey(d))) back();   // today not written yet doesn't break the streak
   const keys = [];
-  while (days.has(dayKey(d))) { keys.push(dayKey(d)); d = new Date(d - DAY_MS); }
+  while (days.has(dayKey(d)) && keys.length < 10000) { keys.push(dayKey(d)); back(); }
   return keys;
 }
 

@@ -248,18 +248,34 @@ export async function makeStory(sessionTracks, { date, line = '', onProgress = (
     recorder.start(1000);
     const t0 = c.currentTime + 0.05;
     src.start(t0);
-    await new Promise(res => {
-      const timer = setInterval(() => {
-        const t = Math.max(0, c.currentTime - t0);
-        draw(Math.min(t, duration), analyser);
-        onProgress(Math.min(1, t / duration));
-        if (t >= duration + 0.3) { clearInterval(timer); res(); }
-      }, 1000 / FPS);
-    });
+    // If the page is hidden (another app, a locked phone) the picture freezes while the sound
+    // carries on, which would make a broken video. Stop and say so instead.
+    let interrupted = false;
+    const onHide = () => { if (document.hidden) interrupted = true; };
+    document.addEventListener('visibilitychange', onHide);
+    try {
+      await new Promise(res => {
+        const timer = setInterval(() => {
+          const t = Math.max(0, c.currentTime - t0);
+          if (interrupted) { clearInterval(timer); res(); return; }
+          draw(Math.min(t, duration), analyser);
+          onProgress(Math.min(1, t / duration));
+          if (t >= duration + 0.3) { clearInterval(timer); res(); }
+        }, 1000 / FPS);
+      });
+    } finally {
+      document.removeEventListener('visibilitychange', onHide);
+    }
     recorder.stop();
     await stopped;
     stream.getTracks().forEach(tr => tr.stop());
+    try { src.stop(); } catch (e) { /* already finished */ }
     src.disconnect();
+    if (interrupted) {
+      const err = new Error('The page was hidden while the video was being made');
+      err.name = 'StoryInterrupted';
+      throw err;
+    }
 
     const base = type.split(';')[0];
     return { blob: new Blob(chunks, { type: base }), ext: base === 'video/mp4' ? 'mp4' : 'webm', type: base };

@@ -1,6 +1,6 @@
 // Color themes for the page, named after the moods. "sky" is the original blue;
 // "follow my mood" changes the page to each paragraph's mood color as you write.
-import { MOODS } from './moods.js';
+import { MOODS, isMood } from './moods.js';
 
 const STORE = 'tmf_theme';
 let current = 'sky';
@@ -49,7 +49,7 @@ function paint(color) {
 function choose(name, save = true) {
   current = name;
   if (name === 'sky' || name === 'follow') paint(null);
-  else paint((MOODS[name] || {}).color || null);
+  else paint(isMood(name) ? MOODS[name].color : null);
   if (save) { try { localStorage.setItem(STORE, name); } catch (e) { /* not essential */ } }
   document.querySelectorAll('.theme-swatch').forEach(s => s.setAttribute('aria-pressed', s.dataset.theme === name ? 'true' : 'false'));
   const label = document.getElementById('theme-name');
@@ -58,7 +58,7 @@ function choose(name, save = true) {
 
 // Called whenever a paragraph's mood is shown
 export function followMood(moodName) {
-  if (current === 'follow' && MOODS[moodName]) paint(MOODS[moodName].color);
+  if (current === 'follow' && isMood(moodName)) paint(MOODS[moodName].color);
 }
 
 export function initThemes() {
@@ -82,5 +82,5 @@ export function initThemes() {
   );
   let saved = 'sky';
   try { saved = localStorage.getItem(STORE) || 'sky'; } catch (e) { /* default */ }
-  choose(saved === 'sky' || saved === 'follow' || MOODS[saved] ? saved : 'sky', false);
+  choose(saved === 'sky' || saved === 'follow' || isMood(saved) ? saved : 'sky', false);
 }
