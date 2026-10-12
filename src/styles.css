@@ -13,12 +13,16 @@
   --accent1: #2f74c0;
   --accent2: #3fa0b8;
   --accent3: #5f73d1;
+  --sky1: #9fcdf3;
+  --sky2: #c7e3f9;
+  --sky3: #e8f3fd;
+  --focus-ring: rgba(47, 116, 192, 0.12);
   --shadow: 0 12px 40px rgba(60, 110, 170, 0.14);
   --radius: 18px;
 }
 
 body {
-  background: linear-gradient(180deg, #9fcdf3 0%, #c7e3f9 32%, #e8f3fd 66%, #ffffff 100%) fixed;
+  background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 32%, var(--sky3) 66%, #ffffff 100%) fixed;
   background-color: var(--bg);
   color: var(--text);
   font-family: 'Nunito', sans-serif;
@@ -341,8 +345,8 @@ textarea {
   line-height: 1.75; padding: 28px 32px; resize: vertical; outline: none;
   transition: border-color 0.2s ease; caret-color: var(--accent1);
 }
-textarea::placeholder { color: #7f97b3; font-style: italic; }
-textarea:focus { border-color: var(--border2); box-shadow: var(--shadow), 0 0 0 4px rgba(47, 116, 192, 0.12); }
+textarea::placeholder { color: var(--muted); font-style: italic; }
+textarea:focus { border-color: var(--border2); box-shadow: var(--shadow), 0 0 0 4px var(--focus-ring); }
 
 .corner { display: none; position: absolute; width: 10px; height: 10px; border-color: var(--accent1); border-style: solid; opacity: 0.4; transition: opacity 0.3s; }
 textarea:focus ~ .corner { opacity: 0.9; }
@@ -383,7 +387,7 @@ textarea:focus ~ .corner { opacity: 0.9; }
 .story-line:focus { outline: none; border-color: var(--accent1); }
 .story-result { display: none; margin-top: 16px; }
 .story-result.show { display: block; }
-.story-preview { display: none; width: 100%; max-width: 220px; aspect-ratio: 9 / 16; margin: 0 auto 12px; border-radius: 14px; box-shadow: var(--shadow); background: #c7e3f9; object-fit: cover; }
+.story-preview { display: none; width: 100%; max-width: 220px; aspect-ratio: 9 / 16; margin: 0 auto 12px; border-radius: 14px; box-shadow: var(--shadow); background: var(--sky2); object-fit: cover; }
 .story-preview.show { display: block; }
 
 footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.7); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; display: flex; justify-content: space-between; }
@@ -427,7 +431,7 @@ footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 25
 
 /* Entry name */
 input.entry-title { display: block; border-radius: 0; letter-spacing: normal; min-height: 0; width: 100%; margin: 0 0 14px; padding: 6px 2px 8px; border: none; border-bottom: 1px solid var(--border2); background: transparent; color: var(--text); font-family: 'DM Serif Display', serif; font-size: 26px; }
-input.entry-title::placeholder { color: #8aa2bd; font-style: italic; }
+input.entry-title::placeholder { color: var(--muted); opacity: 0.8; font-style: italic; }
 input.entry-title:focus { outline: none; border-bottom-color: var(--accent1); }
 @media (max-width: 600px) { input.entry-title { font-size: 22px; } }
 
@@ -477,3 +481,13 @@ input.entry-title:focus { outline: none; border-bottom-color: var(--accent1); }
 .mood-badge.visible { border-color: var(--mood-color, var(--border2)); color: var(--mood-color, var(--text)); }
 .mood-btn { border-color: color-mix(in srgb, var(--mood-color, var(--border)) 35%, transparent); }
 .mood-btn.selected { border-color: var(--mood-color, var(--accent1)); color: #fff; background: var(--mood-color, var(--accent1)); }
+
+/* Theme picker (above the calendar) */
+.theme-picker { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.theme-picker .panel-title { font-size: 15px; margin-bottom: 10px; }
+.theme-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.theme-swatch { width: 100%; aspect-ratio: 1; max-width: 30px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border2); cursor: pointer; padding: 0; transition: transform .15s; justify-self: center; }
+.theme-swatch:hover { transform: scale(1.12); }
+.theme-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--text); }
+.theme-name { margin-top: 8px; font-size: 12px; color: var(--muted2); }
+@media (pointer: coarse) { .theme-swatches { gap: 10px; } .theme-swatch { max-width: 36px; } }

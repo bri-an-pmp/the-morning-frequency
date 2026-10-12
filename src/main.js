@@ -15,6 +15,7 @@ import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journ
 import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
 import { makeStory } from './story.js';
 import { initCircle, keyForStep, setCircleStep } from './circle.js';
+import { initThemes, followMood } from './theme.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -62,6 +63,7 @@ function showMoodResult(moodData, key = null) {
   moodBadge.textContent = p.label;
   moodBadge.className = 'mood-badge visible';
   moodBadge.style.setProperty('--mood-color', p.color);
+  followMood(p.label);
   const desc = key ? describeKey(p, key) + ' · ' + p.desc.split(' · ').slice(2).join(' · ') : p.desc;
   moodParam.textContent = desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
   moodParam.classList.add('visible');
@@ -664,6 +666,7 @@ document.getElementById('finish-btn').addEventListener('click', () => {
 });
 
 initCircle();
+initThemes();
 
 (async () => {
   entries = await loadEntries();
