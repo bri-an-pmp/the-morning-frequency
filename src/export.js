@@ -6,14 +6,30 @@ export function sessionParagraphs() {
   return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
 }
 
+// The open entry's date and name, kept in sync by main.js
+let meta = { date: new Date(), title: '' };
+export function setSessionMeta(m) { meta = { ...meta, ...m }; }
+
 export function sessionDate() {
-  return new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  return meta.date.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// The entry's name, or its first line when the writer hasn't named it
+export function sessionName() {
+  return meta.title || sessionParagraphs()[0] || 'The Morning Frequency';
+}
+
+// "2026-10-12 - Sunday Reset.docx": the date, then the name, safe for every file system
+export function datedFilename(date, name, ext) {
+  const iso = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+  let safe = name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim();
+  if (safe.length > 60) safe = safe.slice(0, 60).replace(/\s+\S*$/, '');
+  safe = safe.replace(/[. ]+$/, '');
+  return iso + (safe ? ' - ' + safe : '') + '.' + ext;
 }
 
 export function sessionFilename(ext) {
-  const d = new Date();
-  const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-  return 'the-morning-frequency-' + iso + '.' + ext;
+  return datedFilename(meta.date, sessionName(), ext);
 }
 
 export function saveBlob(blob, filename) {
@@ -27,8 +43,8 @@ export function saveBlob(blob, filename) {
 export async function makeDocxBlob() {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
   const doc = new Document({ sections: [{ children: [
-    new Paragraph({ text: 'The Morning Frequency', heading: HeadingLevel.TITLE }),
-    new Paragraph({ children: [new TextRun({ text: sessionDate(), italics: true, color: '666666' })], spacing: { after: 360 } }),
+    new Paragraph({ text: meta.title || 'The Morning Frequency', heading: HeadingLevel.TITLE }),
+    new Paragraph({ children: [new TextRun({ text: sessionDate() + (meta.title ? ' · The Morning Frequency' : ''), italics: true, color: '666666' })], spacing: { after: 360 } }),
     ...sessionParagraphs().map(t => new Paragraph({ children: [new TextRun({ text: t, size: 24 })], spacing: { after: 240, line: 360 } }))
   ]}]});
   return Packer.toBlob(doc);
@@ -41,9 +57,10 @@ export async function makePdfBlob() {
   const bottom = pdf.internal.pageSize.getHeight() - margin;
   let y = margin;
   pdf.setFont('times', 'normal'); pdf.setFontSize(24);
-  pdf.text('The Morning Frequency', margin, y); y += 24;
+  pdf.splitTextToSize(meta.title || 'The Morning Frequency', width).forEach(line => { pdf.text(line, margin, y); y += 28; });
+  y -= 4;
   pdf.setFont('times', 'italic'); pdf.setFontSize(12); pdf.setTextColor(102);
-  pdf.text(sessionDate(), margin, y); y += 36;
+  pdf.text(sessionDate() + (meta.title ? ' · The Morning Frequency' : ''), margin, y); y += 36;
   pdf.setFont('times', 'normal'); pdf.setTextColor(0);
   const lineH = 18;
   sessionParagraphs().forEach(t => {

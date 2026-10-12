@@ -8,7 +8,7 @@ import './styles.css';
 import { MOODS, analyzeMood } from './moods.js';
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import {
-  sessionParagraphs, sessionFilename, saveBlob, canShareFiles,
+  sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
   makeDocxBlob, makePdfBlob, makeWavBlob, makeStreakWavBlob, shareFile,
 } from './export.js';
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
@@ -239,6 +239,7 @@ function selectMood(btn) {
 function clearSession() {
   sessionGen++;
   document.getElementById('writer').value = '';
+  titleEl.value = '';
   completedCount = 0; enterCount = 0; sessionTracks = []; prevText = '';
   pips.forEach(p => p.removeAttribute('title'));
   document.getElementById('pip-hint').classList.remove('visible');
@@ -270,14 +271,34 @@ function scheduleSave(delay = 600) {
   saveTimer = setTimeout(persist, delay);
 }
 
+// ─── Entry name ───────────────────────────────────────────────────────────────
+const titleEl = document.getElementById('entry-title');
+function syncMeta() {
+  setSessionMeta({ date: new Date(currentCreatedAt || Date.now()), title: titleEl.value.trim() });
+}
+let reprepareTimer = null;
+titleEl.addEventListener('input', () => {
+  syncMeta();
+  scheduleSave();
+  // Downloads already prepared carry the old name inside the document — redo them
+  if (document.getElementById('finish-panel').classList.contains('show')) {
+    clearTimeout(reprepareTimer);
+    reprepareTimer = setTimeout(prepareFiles, 500);
+  }
+});
+// Return in the name box jumps down to the writing
+titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('writer').focus(); } });
+
 async function persist() {
   const text = document.getElementById('writer').value;
-  if (!text.trim()) return;                       // nothing worth keeping yet
+  const title = titleEl.value.trim();
+  if (!text.trim() && !title) return;             // nothing worth keeping yet
   if (!currentId) { currentId = newEntryId(); currentCreatedAt = new Date().toISOString(); }
   entries = await saveEntry({
     id: currentId,
     createdAt: currentCreatedAt,
     updatedAt: new Date().toISOString(),
+    title,
     text,
     completedCount,
     enterCount,
@@ -381,7 +402,7 @@ document.getElementById('streak-close').addEventListener('click', () => {
   stopStreakMix();
   streakEls.panel.classList.remove('show');
 });
-function streakFilename() { return sessionFilename('wav').replace('frequency-', 'frequency-streak-'); }
+function streakFilename() { return datedFilename(new Date(), `${streakDays(entries)}-day streak mix`, 'wav'); }
 streakEls.download.addEventListener('click', async () => saveBlob(await streakMix, streakFilename()));
 streakEls.share.addEventListener('click', async () => {
   try { await shareFile(await streakMix, streakFilename(), 'audio/wav'); }
@@ -407,6 +428,8 @@ async function openEntry(entry) {
   currentId = entry.id; currentCreatedAt = entry.createdAt;
   const writer = document.getElementById('writer');
   writer.value = entry.text;
+  titleEl.value = entry.title || '';
+  syncMeta();
   prevText = entry.text;
   completedCount = entry.completedCount || 0;
   enterCount = entry.enterCount || 0;
@@ -601,6 +624,7 @@ document.getElementById('finish-btn').addEventListener('click', () => {
     : 'No music yet — press Enter twice after a paragraph to create some.';
   storyEls.section.classList.toggle('show', hasMusic);
   resetStory();
+  syncMeta();
   prepareFiles();
   const panel = document.getElementById('finish-panel');
   panel.classList.add('show');

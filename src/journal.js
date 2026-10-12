@@ -47,6 +47,8 @@ export function dayKey(date) {
 }
 
 export function entryTitle(entry) {
+  const named = (entry.title || '').trim();
+  if (named) return named.length > 48 ? named.slice(0, 46).trimEnd() + '…' : named;
   const first = (entry.text || '').split('\n').map(l => l.trim()).find(Boolean) || 'Empty entry';
   return first.length > 48 ? first.slice(0, 46).trimEnd() + '…' : first;
 }
