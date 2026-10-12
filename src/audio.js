@@ -14,6 +14,24 @@ export function ctx() {
   return audioCtx;
 }
 function vol() { return parseInt(document.getElementById('volume').value) / 100; }
+
+// Reverb and delay sliders: 100% is the original sound, 0% is dry, 200% is twice as wet
+const BASE_FX = { reverb: 2.2, delay: 0.6, echo: 0.3 };
+function fxAmount(id) {
+  const el = document.getElementById(id);
+  const v = el ? parseInt(el.value, 10) / 100 : 1;
+  return Number.isFinite(v) ? Math.min(2, Math.max(0, v)) : 1;
+}
+function applyFx(chain, t) {
+  const r = fxAmount('reverb-amt'), d = fxAmount('delay-amt');
+  chain.reverbGain.gain.setTargetAtTime(BASE_FX.reverb * r, t, 0.05);
+  chain.delayGain.gain.setTargetAtTime(BASE_FX.delay * d, t, 0.05);
+  chain.echoSend.gain.setTargetAtTime(BASE_FX.echo * d, t, 0.05);
+}
+// Called when a slider moves, so music that's already playing changes too
+export function updateFx() {
+  if (audioCtx && audioCtx._chain) applyFx(audioCtx._chain, audioCtx.currentTime);
+}
 function getTempo(p) { return Math.max(20, p.tempoBase + parseInt(document.getElementById('tempo-offset').value)); }
 function getRootFreq(p) {
   const k = document.getElementById('key-pref').value;
@@ -202,7 +220,8 @@ function getChain(c) {
   limiter.connect(trim);
   trim.connect(c.destination);
 
-  c._chain = { ctx: c, bus, delay, echo, dry, reverbGain, master };
+  c._chain = { ctx: c, bus, delay, echo, dry, reverbGain, delayGain, echoSend, master };
+  applyFx(c._chain, c.currentTime);
   return c._chain;
 }
 
@@ -386,6 +405,7 @@ function toMinor(semi) {
 // key: { root, minor } from the circle of fifths, or null to use the mood / key preference.
 export function playMoodMusic(profile, paraIndex, c = ctx(), key = null) {
   const chain = getChain(c);
+  applyFx(chain, c.currentTime);
   const root = key ? key.root : getRootFreq(profile);
   const tone = semi => (key && key.minor ? toMinor(semi) : semi);
   const texture = getTexture(profile);
@@ -546,6 +566,7 @@ export function playStreakMusic(days, c = ctx()) {
   const s = STREAK_SOUNDS[days];
   if (!s) return;
   const chain = getChain(c);
+  applyFx(chain, c.currentTime);
   const T = c.currentTime + 0.12;
   const note = semi => s.root * Math.pow(2, semi / 12);
 
@@ -593,6 +614,7 @@ export function playStreakMusic(days, c = ctx()) {
 // keys: [{ root, minor }]. Returns how many seconds the sequence lasts.
 export function playKeyPreview(keys, c = ctx()) {
   const chain = getChain(c);
+  applyFx(chain, c.currentTime);
   const T = c.currentTime + 0.08;
   const STEP = 1.0;
   chain.delay.delayTime.setValueAtTime(0.28, T);

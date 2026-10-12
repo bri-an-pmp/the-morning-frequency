@@ -6,7 +6,7 @@ import '@fontsource/nunito/400.css';
 import '@fontsource/nunito/600.css';
 import './styles.css';
 import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeKey } from './moods.js';
-import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
+import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS, updateFx } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
   makeDocxBlob, makePdfBlob, makeWavBlob, makeStreakWavBlob, STREAK_MIX_MAX, shareFile,
@@ -241,6 +241,17 @@ document.querySelector('.mood-buttons').append(...Object.values(MOODS).map(p => 
 document.querySelectorAll('.mood-btn').forEach(btn => btn.addEventListener('click', () => selectMood(btn)));
 document.getElementById('tempo-offset').addEventListener('input', e => {
   document.getElementById('tempo-val').textContent = (e.target.value > 0 ? '+' : '') + e.target.value;
+});
+// Reverb and delay: remembered between visits, and applied straight away
+['reverb-amt', 'delay-amt'].forEach(id => {
+  const el = document.getElementById(id), label = document.getElementById(id + '-val');
+  try { const saved = localStorage.getItem('tmf_' + id); if (saved !== null && /^\d{1,3}$/.test(saved)) el.value = saved; } catch (e) { /* default */ }
+  label.textContent = el.value + '%';
+  el.addEventListener('input', () => {
+    label.textContent = el.value + '%';
+    try { localStorage.setItem('tmf_' + id, el.value); } catch (e) { /* not essential */ }
+    updateFx();
+  });
 });
 document.getElementById('volume').addEventListener('input', e => {
   document.getElementById('volume-val').textContent = e.target.value + '%';
