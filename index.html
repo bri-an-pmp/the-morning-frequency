@@ -125,8 +125,8 @@
     <div class="setting-group">
       <div class="setting-label">key preference</div>
       <select id="key-pref">
+        <option value="circle" selected>circle of fifths</option>
         <option value="auto">auto (from mood)</option>
-        <option value="circle">circle of fifths — pick a home key</option>
         <option value="C">C major / A minor</option>
         <option value="G">G major / E minor</option>
         <option value="D">D major / B minor</option>
@@ -151,6 +151,7 @@
         <button type="button" class="cof-dir" data-dir="1">↻ clockwise — brighter, each step up a fifth</button>
         <button type="button" class="cof-dir" data-dir="-1">↺ counter-clockwise — settles home, each step down a fifth</button>
       </div>
+      <button type="button" class="reset-btn finish-btn cof-preview" id="cof-preview" disabled>▶ hear your path · 5 sec</button>
       <div class="circle-legend" id="circle-legend"></div>
     </div>
 

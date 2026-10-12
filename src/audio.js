@@ -588,3 +588,31 @@ export function playStreakMusic(days, c = ctx()) {
   chain.master.gain.setValueAtTime(0.75, end);
   chain.master.gain.exponentialRampToValueAtTime(0.0001, end + 5.5);
 }
+
+// ── Circle of fifths preview: one chord per key, a second each ───────────────
+// keys: [{ root, minor }]. Returns how many seconds the sequence lasts.
+export function playKeyPreview(keys, c = ctx()) {
+  const chain = getChain(c);
+  const T = c.currentTime + 0.08;
+  const STEP = 1.0;
+  chain.delay.delayTime.setValueAtTime(0.28, T);
+  chain.echo.delayTime.setValueAtTime(0.56, T);
+  chain.bus.gain.cancelScheduledValues(T);
+  chain.bus.gain.setValueAtTime(1.0, T);
+  keys.forEach((k, i) => {
+    const t = T + i * STEP;
+    const triad = [0, k.minor ? 3 : 4, 7, 12];
+    triad.forEach((semi, j) => {
+      const f = k.root * Math.pow(2, semi / 12);
+      bellVoice(c, chain.bus, f, t + j * 0.05, 0.07, 1.8);
+      choirVoice(c, chain.bus, f / 2, t, STEP * 1.15, 0.05, FORMANTS[j], 2.5);
+    });
+    organVoice(c, chain.bus, k.root / 4, t, STEP * 1.1, 0.05, 'reflective');
+  });
+  const end = T + keys.length * STEP;
+  chain.master.gain.cancelScheduledValues(T);
+  chain.master.gain.setValueAtTime(0.75, T);
+  chain.master.gain.setValueAtTime(0.75, end);
+  chain.master.gain.exponentialRampToValueAtTime(0.0001, end + 3.5);
+  return keys.length * STEP;
+}
