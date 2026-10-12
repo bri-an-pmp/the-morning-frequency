@@ -482,3 +482,80 @@ export function playMoodMusic(profile, paraIndex, c = ctx()) {
     organVoice(c, chain.bus, root / 4, fT, chordDur * 1.4, 0.07, profile.label);
   }
 }
+
+// ── Streak milestones ─────────────────────────────────────────────────────────
+// Each milestone has its own key, bell pattern and closing chord, and each one
+// is grander than the last: bells → + organ → + fanfare → + cascade.
+export const STREAK_SOUNDS = {
+  3:  { name: 'First Light',    root: 523.25, step: 0.17, arp: [0, 4, 7, 12],                         chord: [0, 4, 7, 12],          hold: 3.5 },
+  5:  { name: 'Morning Bells',  root: 587.33, step: 0.15, arp: [0, 4, 7, 12, 16],                      chord: [0, 4, 7, 11, 16],      hold: 4.0 },
+  10: { name: 'Rising Sun',     root: 659.25, step: 0.12, arp: [0, 7, 12, 16, 19, 24],                 chord: [0, 4, 7, 14],          hold: 4.5, organ: true },
+  14: { name: 'Fortnight',      root: 698.46, step: 0.13, arp: [0, 4, 6, 7, 11, 12, 16],               chord: [0, 4, 6, 11, 16],      hold: 5.0, organ: true },   // lydian shimmer
+  21: { name: 'Three Weeks',    root: 783.99, step: 0.12, arp: [0, 4, 7, 12, 16, 19, 24],              chord: [0, 4, 7, 9, 14, 19],   hold: 5.5, organ: true, fanfare: true },
+  30: { name: 'Full Frequency', root: 880.00, step: 0.10, arp: [0, 4, 7, 11, 12, 14, 16, 19, 24, 19, 16, 12, 24], chord: [0, 4, 7, 11, 14, 19, 23], hold: 7.0, organ: true, fanfare: true, cascade: true },
+};
+export const STREAK_MILESTONES = Object.keys(STREAK_SOUNDS).map(Number);
+
+// A struck bell: a few sine partials (slightly stretched, like real bells) that ring and decay
+function bellVoice(c, bus, freq, startT, gain, decay = 3.2) {
+  const v = vol();
+  [[1, 1], [2.01, 0.5], [3.02, 0.22], [4.17, 0.14], [5.43, 0.07]].forEach(([ratio, g], k) => {
+    const osc = c.createOscillator();
+    const env = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq * ratio;
+    const len = decay / Math.sqrt(k + 1);
+    env.gain.setValueAtTime(0.0001, startT);
+    env.gain.exponentialRampToValueAtTime(gain * g * v, startT + 0.006);
+    env.gain.exponentialRampToValueAtTime(0.0001, startT + len);
+    osc.connect(env); env.connect(bus);
+    osc.start(startT); osc.stop(startT + len + 0.05);
+  });
+}
+
+export function playStreakMusic(days, c = ctx()) {
+  const s = STREAK_SOUNDS[days];
+  if (!s) return;
+  const chain = getChain(c);
+  const T = c.currentTime + 0.12;
+  const note = semi => s.root * Math.pow(2, semi / 12);
+
+  chain.delay.delayTime.setValueAtTime(s.step * 1.5, T);
+  chain.echo.delayTime.setValueAtTime(s.step * 3, T);
+  chain.bus.gain.cancelScheduledValues(T);
+  chain.bus.gain.setValueAtTime(1.0, T);
+
+  // Fanfare: three quick organ stabs on the root before the bells
+  let t = T;
+  if (s.fanfare) {
+    [0, 0, 0, 7].forEach((semi, i) => {
+      const len = i < 3 ? 0.11 : 0.3;
+      organVoice(c, chain.bus, note(semi) / 2, t, len, 0.07, 'joyful');
+      t += i < 3 ? 0.14 : 0.36;
+    });
+  }
+
+  // The bell pattern
+  s.arp.forEach((semi, i) => bellVoice(c, chain.bus, note(semi), t + i * s.step, 0.11));
+  t += s.arp.length * s.step + 0.08;
+
+  // Cascade (30 days): a shower of high bells falling back down over the chord
+  if (s.cascade) {
+    [36, 31, 28, 24, 19, 16, 12].forEach((semi, i) => bellVoice(c, chain.bus, note(semi - 12), t + 0.4 + i * 0.09, 0.05, 2.2));
+  }
+
+  // The closing chord: bells struck together, held by the choir (and organ)
+  s.chord.forEach((semi, i) => {
+    const f = note(semi);
+    bellVoice(c, chain.bus, f, t + i * 0.02, 0.07, 4.5);
+    choirVoice(c, chain.bus, f / 2, t, s.hold, 0.06, FORMANTS[Math.min(i, FORMANTS.length - 1)], 3.0);
+    if (s.organ) organVoice(c, chain.bus, f / 2, t, s.hold, 0.03, 'joyful');
+  });
+  if (s.organ) organVoice(c, chain.bus, s.root / 4, t, s.hold, 0.06, 'joyful');   // warm floor under it
+
+  const end = t + s.hold;
+  chain.master.gain.cancelScheduledValues(T);
+  chain.master.gain.setValueAtTime(0.75, T);
+  chain.master.gain.setValueAtTime(0.75, end);
+  chain.master.gain.exponentialRampToValueAtTime(0.0001, end + 5.5);
+}

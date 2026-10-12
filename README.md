@@ -18,6 +18,7 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email.
 5. Tap **make story video** to turn your music into a short video for Instagram, TikTok or Facebook stories, then **share to story**. Your writing stays private unless you choose to add a line.
 6. Every entry saves automatically. Find past entries in **Your entries** on the left (like a chat history) and see the days you wrote on the **calendar** on the right, along with your streak. On a phone, open them with the buttons at the top of the screen.
+7. Write on 3, 5, 10, 14, 21 and 30 days in a row to unlock streak sounds, each with its own key and bells, grander at every milestone. Each streak also earns a **streak mix**: every paragraph's music from the whole streak in one continuous piece, ending with the milestone sound, to play, download or share.
 
 ## How It Works
 

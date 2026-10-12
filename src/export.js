@@ -1,5 +1,6 @@
 // Builds the Word, PDF and WAV files and shares them
-import { playMoodMusic } from './audio.js';
+import { playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
+import { MOODS } from './moods.js';
 
 export function sessionParagraphs() {
   return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
@@ -150,4 +151,33 @@ export async function shareFile(blob, filename, type) {
   const files = [new File([blob], filename, { type })];
   if (!canShareFiles(files)) { saveBlob(blob, filename); return; }
   await navigator.share({ files, title: 'The Morning Frequency' });
+}
+
+// ── Streak mix: every paragraph's music from every day of the streak, oldest first,
+// joined seamlessly, ending with the milestone's own sound ──
+async function renderStreakSound(days) {
+  const s = STREAK_SOUNDS[days];
+  const sr = 44100;
+  const seconds = 2 + s.arp.length * s.step + s.hold + 6.5;
+  const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const oc = new Offline(2, Math.ceil(sr * seconds), sr);
+  playStreakMusic(days, oc);
+  return oc.startRendering();
+}
+
+// streakEntries: the entries in the streak (any order). onProgress(done, total)
+export async function makeStreakWavBlob(streakEntries, milestone, onProgress = () => {}) {
+  const tracks = [...streakEntries]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .flatMap(e => (e.tracks || []).filter(Boolean))
+    .map(t => ({ musicIndex: t.musicIndex, profile: MOODS[t.moodData?.mood] || MOODS.neutral }));
+  const total = tracks.length + (milestone ? 1 : 0);
+  const buffers = [];
+  for (const t of tracks) {
+    buffers.push(await renderTrack(t));
+    onProgress(buffers.length, total);
+  }
+  if (milestone) buffers.push(await renderStreakSound(milestone));
+  onProgress(total, total);
+  return encodeWav([joinSeamlessly(buffers)]);
 }

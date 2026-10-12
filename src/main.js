@@ -6,13 +6,13 @@ import '@fontsource/nunito/400.css';
 import '@fontsource/nunito/600.css';
 import './styles.css';
 import { MOODS, analyzeMood } from './moods.js';
-import { ctx, playMoodMusic } from './audio.js';
+import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, saveBlob, canShareFiles,
-  makeDocxBlob, makePdfBlob, makeWavBlob, shareFile,
+  makeDocxBlob, makePdfBlob, makeWavBlob, makeStreakWavBlob, shareFile,
 } from './export.js';
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
-import { renderHistory, renderCalendar } from './sidebar.js';
+import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
 import { makeStory } from './story.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -117,6 +117,7 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   }
   const token = ++playToken;
   playMoodMusic(profile, musicIndex);
+  if (index !== null && !edit) checkStreakMilestone(gen);
 
   if (index === 2 && !edit) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
 
@@ -293,8 +294,99 @@ function renderSidebars() {
   renderCalendar(document.getElementById('calendar'), entries, calMonth, currentId, {
     onPickDay: entry => { openEntry(entry); closeDrawers(); },
     onMonth: m => { calMonth = m; renderSidebars(); },
+    onStreak: () => { closeDrawers(); openStreakPanel(streakDays(entries)); },
   });
 }
+
+// ─── Streaks ──────────────────────────────────────────────────────────────────
+// Reaching 3, 5, 10, 14, 21 or 30 days in a row plays that milestone's own sound (once),
+// then offers the streak mix: every paragraph's music from the whole streak in one piece.
+async function checkStreakMilestone(gen) {
+  clearTimeout(saveTimer);
+  await persist();
+  if (gen !== sessionGen || !currentCreatedAt || dayKey(currentCreatedAt) !== dayKey(new Date())) return;
+  const streak = streakDays(entries);
+  if (!STREAK_SOUNDS[streak]) return;
+  const mark = dayKey(new Date()) + ':' + streak;
+  try {
+    if (localStorage.getItem('tmf_streak_celebrated') === mark) return;
+    localStorage.setItem('tmf_streak_celebrated', mark);
+  } catch (e) { /* celebrate anyway */ }
+  // Let the paragraph's own music ring first
+  setTimeout(() => {
+    const token = ++playToken;
+    playStreakMusic(streak);
+    notifEl.className = 'notif playing';
+    notifEl.style.setProperty('--notif-color', '#a77a1f');
+    setWave('#d4a531', true);
+    notifTxt.textContent = `✦ ${streak}-day streak — ${STREAK_SOUNDS[streak].name}`;
+    setTimeout(() => { if (token === playToken) { setWave('#d4a531', false); notifEl.classList.remove('playing'); } }, 7000);
+    openStreakPanel(streak);
+  }, 5000);
+}
+
+const streakEls = {
+  panel: document.getElementById('streak-panel'),
+  title: document.getElementById('streak-title'),
+  sub: document.getElementById('streak-sub'),
+  play: document.getElementById('streak-play'),
+  download: document.getElementById('streak-download'),
+  share: document.getElementById('streak-share'),
+};
+let streakMix = null;        // Promise<Blob>
+let streakSource = null;     // the streak mix while it's playing
+
+function stopStreakMix() {
+  if (streakSource) { try { streakSource.stop(); } catch (e) {} streakSource = null; }
+  streakEls.play.textContent = 'play streak mix';
+}
+
+function openStreakPanel(streak) {
+  const milestone = reachedMilestone(streak);
+  if (!milestone) return;
+  stopStreakMix();
+  const inStreak = streakEntries(entries);
+  const paras = inStreak.reduce((n, e) => n + (e.tracks || []).filter(Boolean).length, 0);
+  streakEls.title.textContent = `✦ ${streak}-day streak · ${STREAK_SOUNDS[milestone].name}`;
+  streakEls.sub.textContent = `Your reward: every frequency from your streak — ${paras} paragraph${paras !== 1 ? 's' : ''} over ${streak} days — in one piece, ending with your ${milestone}-day streak sound.`;
+  const btns = [streakEls.play, streakEls.download, streakEls.share];
+  btns.forEach(b => { b.disabled = true; });
+  streakEls.play.textContent = 'preparing...';
+  streakMix = makeStreakWavBlob(inStreak, milestone, (done, total) => {
+    streakEls.play.textContent = `preparing... ${Math.round(done / total * 100)}%`;
+  });
+  streakMix
+    .then(() => { streakEls.play.textContent = 'play streak mix'; })
+    .catch(e => { console.error(e); streakEls.play.textContent = 'couldn\'t prepare the mix'; })
+    .finally(() => btns.forEach(b => { b.disabled = false; }));
+  streakEls.panel.classList.add('show');
+  streakEls.panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+streakEls.play.addEventListener('click', async () => {
+  if (streakSource) { stopStreakMix(); return; }
+  const c = ctx();
+  const buffer = await c.decodeAudioData(await (await streakMix).arrayBuffer());
+  const gain = c.createGain();
+  gain.gain.value = 0.8 * parseInt(document.getElementById('volume').value) / 100;
+  const src = c.createBufferSource();
+  src.buffer = buffer;
+  src.connect(gain); gain.connect(c.destination);
+  src.onended = () => { if (streakSource === src) stopStreakMix(); };
+  streakSource = src;
+  src.start();
+  streakEls.play.textContent = 'stop';
+});
+document.getElementById('streak-close').addEventListener('click', () => {
+  stopStreakMix();
+  streakEls.panel.classList.remove('show');
+});
+function streakFilename() { return sessionFilename('wav').replace('frequency-', 'frequency-streak-'); }
+streakEls.download.addEventListener('click', async () => saveBlob(await streakMix, streakFilename()));
+streakEls.share.addEventListener('click', async () => {
+  try { await shareFile(await streakMix, streakFilename(), 'audio/wav'); }
+  catch (e) { if (e && e.name !== 'AbortError') alert('That didn\'t work — try download instead.'); }
+});
 
 async function startNewEntry() {
   clearTimeout(saveTimer);

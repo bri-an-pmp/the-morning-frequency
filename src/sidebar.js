@@ -1,6 +1,7 @@
 // Left: entry history (like a chat history). Right: calendar of days with entries.
 import { MOODS } from './moods.js';
 import { dayKey, entryTitle } from './journal.js';
+import { STREAK_MILESTONES } from './audio.js';
 
 const DAY_MS = 86400000;
 
@@ -72,16 +73,32 @@ export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
 }
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
-export function streakDays(entries, now = new Date()) {
+// The days (as "YYYY-MM-DD") in the current streak, newest first
+function streakDayKeys(entries, now = new Date()) {
   const days = new Set(entries.map(e => dayKey(e.createdAt)));
   let d = startOfDay(now);
   if (!days.has(dayKey(d))) d = new Date(d - DAY_MS);   // today not written yet doesn't break the streak
-  let n = 0;
-  while (days.has(dayKey(d))) { n++; d = new Date(d - DAY_MS); }
-  return n;
+  const keys = [];
+  while (days.has(dayKey(d))) { keys.push(dayKey(d)); d = new Date(d - DAY_MS); }
+  return keys;
 }
 
-export function renderCalendar(root, entries, month, activeId, { onPickDay, onMonth }) {
+export function streakDays(entries, now = new Date()) {
+  return streakDayKeys(entries, now).length;
+}
+
+// Every entry written during the current streak
+export function streakEntries(entries, now = new Date()) {
+  const keys = new Set(streakDayKeys(entries, now));
+  return entries.filter(e => keys.has(dayKey(e.createdAt)));
+}
+
+// The biggest milestone reached (3, 5, 10, 14, 21, 30) or null
+export function reachedMilestone(streak) {
+  return STREAK_MILESTONES.filter(m => m <= streak).pop() || null;
+}
+
+export function renderCalendar(root, entries, month, activeId, { onPickDay, onMonth, onStreak }) {
   const byDay = new Map();
   entries.forEach(e => { const k = dayKey(e.createdAt); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(e); });
   const activeDay = entries.find(e => e.id === activeId);
@@ -130,9 +147,15 @@ export function renderCalendar(root, entries, month, activeId, { onPickDay, onMo
 
   const streak = streakDays(entries);
   const stats = el('div', 'cal-stats');
-  stats.append(
-    el('div', 'cal-stat', streak ? `${streak}-day streak` : 'Start your streak today'),
-    el('div', 'cal-stat-sub', `${monthCount} entr${monthCount === 1 ? 'y' : 'ies'} in ${month.toLocaleDateString('en-US', { month: 'long' })}`),
-  );
+  stats.append(el('div', 'cal-stat', streak ? `${streak}-day streak` : 'Start your streak today'));
+  const nextMilestone = STREAK_MILESTONES.find(m => m > streak);
+  if (nextMilestone) stats.append(el('div', 'cal-stat-sub', `next streak sound at ${nextMilestone} days`));
+  if (reachedMilestone(streak)) {
+    const mix = el('button', 'cal-streak-mix', '♫ play your streak mix');
+    mix.type = 'button';
+    mix.addEventListener('click', () => onStreak());
+    stats.append(mix);
+  }
+  stats.append(el('div', 'cal-stat-sub', `${monthCount} entr${monthCount === 1 ? 'y' : 'ies'} in ${month.toLocaleDateString('en-US', { month: 'long' })}`));
   root.append(stats);
 }

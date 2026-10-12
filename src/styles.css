@@ -420,3 +420,15 @@ footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 25
   .progress-section { gap: 20px; }
   .cloud { width: 260px; height: 90px; }
 }
+
+/* Streak reward */
+.streak-panel { display: none; position: relative; margin-top: 24px; padding: 22px 24px; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: var(--radius); background: linear-gradient(135deg, rgba(255, 246, 214, 0.92), rgba(255, 255, 255, 0.85)); box-shadow: var(--shadow); text-align: center; }
+.streak-panel.show { display: block; animation: slideUp .4s ease; }
+.streak-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: #a77a1f; margin-bottom: 6px; }
+.streak-sub { font-size: 13px; color: var(--muted2); margin: 0 auto 16px; max-width: 460px; }
+.streak-panel .reset-btn:disabled { opacity: 0.5; cursor: default; }
+.streak-close { position: absolute; top: 8px; right: 10px; width: 36px; height: 36px; border: none; background: none; color: var(--muted); font-size: 22px; cursor: pointer; border-radius: 50%; }
+.streak-close:hover { background: rgba(0, 0, 0, 0.05); color: var(--text); }
+.cal-streak-mix { display: block; margin: 8px 0 6px; padding: 6px 12px; border: 1px solid #e3c77a; border-radius: 999px; background: rgba(255, 246, 214, 0.9); color: #8a6315; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.04em; cursor: pointer; }
+.cal-streak-mix:hover { background: #fff1c7; }
+@media (pointer: coarse) { .cal-streak-mix, .streak-close { min-height: 44px; min-width: 44px; } }
