@@ -5,7 +5,7 @@ import '@fontsource/dm-mono/400.css';
 import '@fontsource/nunito/400.css';
 import '@fontsource/nunito/600.css';
 import './styles.css';
-import { MOODS, analyzeMood, describeKey } from './moods.js';
+import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeKey } from './moods.js';
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
@@ -58,9 +58,10 @@ function showAnalyzing(on) {
 
 function showMoodResult(moodData, key = null) {
   analyzingEl.classList.remove('visible');
-  const p = MOODS[moodData.mood] || MOODS.neutral;
-  moodBadge.textContent = moodData.mood;
-  moodBadge.className = 'mood-badge visible mood-' + moodData.mood;
+  const p = moodProfile(moodData.mood);
+  moodBadge.textContent = p.label;
+  moodBadge.className = 'mood-badge visible';
+  moodBadge.style.setProperty('--mood-color', p.color);
   const desc = key ? describeKey(p, key) + ' · ' + p.desc.split(' · ').slice(2).join(' · ') : p.desc;
   moodParam.textContent = desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
   moodParam.classList.add('visible');
@@ -89,11 +90,11 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
     const p = MOODS[manualMood];
     moodData = { mood:manualMood, energy:p.energy, valence:p.valence, reason:'manual' };
   } else {
-    moodData = paraText ? await analyzeMood(paraText, apiKey) : { mood:'neutral', energy:MOODS.neutral.energy, valence:MOODS.neutral.valence, reason:'blank line' };
+    moodData = paraText ? await analyzeMood(paraText, apiKey) : { mood:DEFAULT_MOOD, energy:MOODS[DEFAULT_MOOD].energy, valence:MOODS[DEFAULT_MOOD].valence, reason:'blank line' };
   }
   if (gen !== sessionGen) return;
 
-  const profile = MOODS[moodData.mood] || MOODS.neutral;
+  const profile = moodProfile(moodData.mood);
   // Circle of fifths: each paragraph takes the next key round the circle. An edited paragraph
   // keeps its key; a blank-line Enter replays the latest paragraph's key.
   const key = edit && sessionTracks[index] ? (sessionTracks[index].key || null)
@@ -211,6 +212,17 @@ document.getElementById('settings-toggle').addEventListener('click', toggleSetti
 document.getElementById('save-key-btn').addEventListener('click', saveApiKey);
 document.getElementById('remove-key-btn').addEventListener('click', removeApiKey);
 document.getElementById('manual-override-toggle').addEventListener('change', e => toggleManualOverride(e.target.checked));
+// One button per mood, with what it means on hover
+document.querySelector('.mood-buttons').append(...Object.values(MOODS).map(p => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'mood-btn';
+  btn.dataset.mood = p.label;
+  btn.textContent = p.label;
+  btn.title = MOOD_MEANINGS[p.label] + ' — ' + p.desc;
+  btn.style.setProperty('--mood-color', p.color);
+  return btn;
+}));
 document.querySelectorAll('.mood-btn').forEach(btn => btn.addEventListener('click', () => selectMood(btn)));
 document.getElementById('tempo-offset').addEventListener('input', e => {
   document.getElementById('tempo-val').textContent = (e.target.value > 0 ? '+' : '') + e.target.value;
@@ -453,7 +465,7 @@ async function openEntry(entry) {
   completedCount = entry.completedCount || 0;
   enterCount = entry.enterCount || 0;
   setCircleStep(completedCount);
-  sessionTracks = (entry.tracks || []).map(t => t ? { ...t, profile: MOODS[t.moodData?.mood] || MOODS.neutral } : null);
+  sessionTracks = (entry.tracks || []).map(t => t ? { ...t, profile: moodProfile(t.moodData?.mood) } : null);
 
   // Restore progress: ring, bars (replayable), title, banner, counts
   const done = Math.min(completedCount, GOAL);

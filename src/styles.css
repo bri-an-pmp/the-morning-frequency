@@ -237,14 +237,6 @@ header {
   color: var(--muted2); transition: all 0.4s ease; opacity: 0;
 }
 .mood-badge.visible { opacity: 1; }
-.mood-joyful      { border-color: #a77a1f !important; color: #a77a1f !important; }
-.mood-reflective  { border-color: #2e8770 !important; color: #2e8770 !important; }
-.mood-tense       { border-color: #c04b44 !important; color: #c04b44 !important; }
-.mood-melancholic { border-color: #4c68ad !important; color: #4c68ad !important; }
-.mood-hopeful     { border-color: #47862f !important; color: #47862f !important; }
-.mood-analytical  { border-color: #6c52b6 !important; color: #6c52b6 !important; }
-.mood-nostalgic   { border-color: #a8634a !important; color: #a8634a !important; }
-.mood-neutral     { border-color: #607189 !important; color: #607189 !important; }
 
 .mood-params { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; opacity: 0; transition: opacity 0.4s ease; }
 .mood-params.visible { opacity: 1; }
@@ -480,3 +472,8 @@ input.entry-title:focus { outline: none; border-bottom-color: var(--accent1); }
 .circle-legend { max-width: 520px; font-size: 13px; line-height: 1.6; color: var(--muted2); text-align: center; display: flex; flex-direction: column; gap: 4px; }
 .circle-legend strong { color: var(--text); }
 @media (pointer: coarse) { .cof-dir { min-height: 44px; } }
+
+/* Mood colors come from each mood's own color */
+.mood-badge.visible { border-color: var(--mood-color, var(--border2)); color: var(--mood-color, var(--text)); }
+.mood-btn { border-color: color-mix(in srgb, var(--mood-color, var(--border)) 35%, transparent); }
+.mood-btn.selected { border-color: var(--mood-color, var(--accent1)); color: #fff; background: var(--mood-color, var(--accent1)); }

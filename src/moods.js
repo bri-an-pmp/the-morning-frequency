@@ -7,10 +7,34 @@ export const MOODS = {
   hopeful:     { label:'hopeful',     root:'E',  tempoBase:92,  energy:0.65, valence:0.78, color:'#47862f', desc:'E major · 92bpm · rising phrases',        scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7,11],  pad:[0,7]     },
   analytical:  { label:'analytical',  root:'A',  tempoBase:80,  energy:0.5,  valence:0.55, color:'#6c52b6', desc:'A dorian · 80bpm · minimal, sparse',     scale:[0,2,3,5,7,9,10,12],  chord:[0,5,7],     pad:[0,7]     },
   nostalgic:   { label:'nostalgic',   root:'F',  tempoBase:68,  energy:0.4,  valence:0.6,  color:'#a8634a', desc:'F major · 68bpm · waltz-like melody',    scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7],     pad:[0,4,7]   },
-  neutral:     { label:'neutral',     root:'C',  tempoBase:72,  energy:0.5,  valence:0.5,  color:'#607189',    desc:'C pentatonic · 72bpm · gentle chord tones',scale:[0,2,4,7,9,12],      chord:[0,4,7,12],  pad:[0,7]     }
+  // Inspired by Stevie Wonder
+  grateful:    { label:'grateful',    root:'Eb', tempoBase:76,  energy:0.5,  valence:0.85, color:'#8b5a9e', desc:'E♭ major · 76bpm · gospel ninths, full organ',        scale:[0,2,4,5,7,9,10,12],  chord:[0,4,7,10,14], pad:[0,7]   },
+  groovy:      { label:'groovy',      root:'Eb', tempoBase:100, energy:0.8,  valence:0.7,  color:'#c2571a', desc:'E♭ minor · 100bpm · funky clav stabs',                scale:[0,3,5,6,7,10,12],    chord:[0,3,7,10],  pad:[0,7]     },
+  loving:      { label:'loving',      root:'Db', tempoBase:70,  energy:0.4,  valence:0.9,  color:'#c8457a', desc:'D♭ major · 70bpm · soft major sevenths',              scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7,11],  pad:[0,4,11]  },
+  celebratory: { label:'celebratory', root:'B',  tempoBase:120, energy:0.9,  valence:0.95, color:'#b58d00', desc:'B major · 120bpm · horn-section unison runs',         scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7,9,14],pad:[0,7]     },
+  dreamy:      { label:'dreamy',      root:'F',  tempoBase:64,  energy:0.35, valence:0.65, color:'#4f9bb8', desc:'F lydian · 64bpm · floating major-seven chords',      scale:[0,2,4,6,7,9,11,12],  chord:[0,4,7,11],  pad:[0,7,11]  },
+  // En español
+  'alegría':   { label:'alegría',     root:'E',  tempoBase:132, energy:0.85, valence:0.9,  color:'#e0703a', desc:'E major · 132bpm · flamenco alegrías, bright I–IV–V', scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7],     pad:[0,7]     },
+  duende:      { label:'duende',      root:'A',  tempoBase:84,  energy:0.6,  valence:0.3,  color:'#7a1f2b', desc:'A phrygian · 84bpm · Andalusian cadence',             scale:[0,1,4,5,7,8,10,12],  chord:[0,4,7],     pad:[0,7]     },
+  ternura:     { label:'ternura',     root:'G',  tempoBase:72,  energy:0.32, valence:0.8,  color:'#b8667f', desc:'G major · 72bpm · bolero, gentle sixths and ninths',  scale:[0,2,4,5,7,9,11,12],  chord:[0,4,7,9],   pad:[0,4,7]   },
 };
 
-export const ROOT_FREQ = { C:261.63, D:293.66, E:329.63, F:349.23, G:392.00, A:440.00, B:493.88, Bb:233.08 };
+// What each mood means, for the mood buttons and for Claude
+export const MOOD_MEANINGS = {
+  joyful: 'bright happiness', reflective: 'quiet thinking', tense: 'stress or worry', melancholic: 'sadness or loss',
+  hopeful: 'looking forward', analytical: 'working things out', nostalgic: 'looking back',
+  grateful: 'thankful, gospel warmth', groovy: 'funky, energetic, in motion', loving: 'romantic or affectionate',
+  celebratory: 'a win, a party, a triumph', dreamy: 'imaginative, floating, wondering',
+  'alegría': 'exuberant joy (flamenco)', duende: 'deep passion, raw soul (flamenco)', ternura: 'tenderness, gentle care (bolero)',
+};
+
+// Writing with no clear mood plays dreamy (there's no "neutral" any more)
+export const DEFAULT_MOOD = 'dreamy';
+export function moodProfile(name) {
+  return MOODS[name] || MOODS[DEFAULT_MOOD];
+}
+
+export const ROOT_FREQ = { C:261.63, Db:277.18, D:293.66, Eb:311.13, E:329.63, F:349.23, G:392.00, A:440.00, B:493.88, Bb:233.08 };
 
 // ─── Mood analysis ────────────────────────────────────────────────────────────
 export async function analyzeMood(text, apiKey) {
@@ -33,7 +57,10 @@ export async function analyzeMood(text, apiKey) {
 
 "${text.trim().slice(0,600)}"
 
-Format: {"mood":"<joyful|reflective|tense|melancholic|hopeful|analytical|nostalgic|neutral>","energy":<0.0-1.0>,"valence":<0.0-1.0>,"reason":"<3-5 words>"}`
+Pick the single best mood from this list (the paragraph may be in any language):
+${Object.entries(MOOD_MEANINGS).map(([m, d]) => `- ${m}: ${d}`).join('\n')}
+
+Format: {"mood":"<one of the moods above, spelled exactly>","energy":<0.0-1.0>,"valence":<0.0-1.0>,"reason":"<3-5 words>"}`
         }]
       })
     });
@@ -50,20 +77,32 @@ Format: {"mood":"<joyful|reflective|tense|melancholic|hopeful|analytical|nostalg
 export function heuristicMood(text) {
   const t = text.toLowerCase();
   const signals = {
-    joyful:      ['happy','joy','laugh','excit','love','wonderful','amazing','celebrat','fun','great'],
+    joyful:      ['happy','joy','laugh','excit','wonderful','amazing','fun','great'],
     melancholic: ['sad','grief','loss','mourn','depress','alone','lonely','miss','pain','sorrow'],
     tense:       ['stress','anxious','urgent','deadline','panic','crisis','fear','worry','danger'],
-    hopeful:     ['hope','future','dream','will','plan','goal','promis','better','progress','forward'],
+    hopeful:     ['hope','future','will','plan','goal','promis','better','progress','forward'],
     reflective:  ['think','wonder','ponder','reflect','consider','maybe','perhaps','memory','remem'],
     analytical:  ['because','therefore','data','result','analysis','research','evidence','conclu'],
     nostalgic:   ['used to','back when','remember','years ago','childhood','old','once','then'],
+    grateful:    ['grateful','gratitude','thankful','thank','bless','appreciat','gracias'],
+    groovy:      ['groove','funk','danc','rhythm','beat','vibe','moving','jam','music'],
+    loving:      ['love','lover','heart','kiss','partner','husband','wife','romance','adore','darling','te quiero','amor'],
+    celebratory: ['celebrat','party','victory','promotion','birthday','congrat','cheers','finally','we did it','nailed'],
+    dreamy:      ['dream','imagine','float','cloud','wish','fantas','drift','magic','wonder if','someday'],
+    'alegría':   ['alegr','feliz','fiesta','baila','bonit','olé','que bien','qué bien','vida'],
+    duende:      ['duende','passion','pasión','fuego','fire','intens','raw','alma','soul','ache'],
+    ternura:     ['tender','gentle','ternura','cariño','abrazo','hug','baby','little one','mamá','mom','cuddl'],
   };
   const scores = {};
   for (const [mood, words] of Object.entries(signals)) {
     scores[mood] = words.filter(w => t.includes(w)).length;
   }
   const top = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
-  if (top[1] === 0) return { mood:'neutral', energy:0.5, valence:0.5, reason:'no strong signal' };
+  if (top[1] === 0) {
+    // No clear words: an exclamation sounds like celebrating, a question like reflecting
+    const mood = /!/.test(t) ? 'celebratory' : /\?/.test(t) ? 'reflective' : DEFAULT_MOOD;
+    return { mood, energy:MOODS[mood].energy, valence:MOODS[mood].valence, reason:'no strong signal' };
+  }
   const p = MOODS[top[0]];
   return { mood:top[0], energy:p.energy, valence:p.valence, reason:'keyword match' };
 }

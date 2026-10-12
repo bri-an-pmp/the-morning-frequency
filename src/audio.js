@@ -287,13 +287,20 @@ const ORGAN_DRAWBARS = {
   hopeful:     [0.4, 1.0, 0.3, 0.5, 0.2, 0.3, 0.1, 0.0 ],
   analytical:  [0.3, 0.8, 0.2, 0.6, 0.1, 0.4, 0.0, 0.0 ],
   nostalgic:   [0.7, 1.0, 0.2, 0.4, 0.1, 0.2, 0.0, 0.0 ],
-  neutral:     [0.5, 1.0, 0.2, 0.4, 0.1, 0.2, 0.0, 0.0 ],
+  grateful:    [0.8, 1.0, 0.8, 0.5, 0.2, 0.3, 0.2, 0.3 ],   // full gospel Hammond
+  groovy:      [0.1, 0.7, 0.6, 0.9, 0.6, 0.7, 0.4, 0.5 ],   // bright, clav-like bite
+  loving:      [0.3, 1.0, 0.1, 0.5, 0.0, 0.2, 0.0, 0.0 ],   // soft, Rhodes-like
+  celebratory: [0.4, 1.0, 0.6, 0.8, 0.5, 0.6, 0.4, 0.4 ],   // brassy
+  dreamy:      [0.2, 1.0, 0.0, 0.6, 0.0, 0.3, 0.0, 0.2 ],   // airy
+  'alegría':   [0.2, 0.9, 0.5, 0.7, 0.6, 0.4, 0.3, 0.2 ],   // bright, guitar-like
+  duende:      [0.9, 1.0, 0.3, 0.2, 0.3, 0.1, 0.0, 0.0 ],   // dark and low
+  ternura:     [0.6, 1.0, 0.0, 0.3, 0.0, 0.1, 0.0, 0.0 ],   // gentle
 };
 const DRAWBAR_RATIOS = [0.5, 1, 1.5, 2, 3, 4, 5, 8]; // harmonic multipliers
 
 function organVoice(c, bus, freq, startT, dur, gain, moodLabel) {
   const v = vol();
-  const drawbars = ORGAN_DRAWBARS[moodLabel] || ORGAN_DRAWBARS.neutral;
+  const drawbars = ORGAN_DRAWBARS[moodLabel] || ORGAN_DRAWBARS.dreamy;
 
   // Classic organ: nearly instant attack, no natural decay (held tone)
   const env = c.createGain();
@@ -336,7 +343,14 @@ const CHORD_VOICINGS = {
   hopeful:     [ [0,4,7,11,14],    [0,4,7,9,14],    [0,4,7,11,16]   ],
   analytical:  [ [0,2,7,10],       [0,2,7,14],      [0,5,7,10]      ],
   nostalgic:   [ [0,4,7,9,14],     [0,4,7,12,16],   [0,4,7,9,12]    ],
-  neutral:     [ [0,4,7,12],       [0,2,4,7],       [0,4,7,9]       ],
+  grateful:    [ [0,4,7,11,14],    [0,4,7,10,14],   [0,5,9,14,16]   ],   // Imaj9, I9, IV over I — gospel
+  groovy:      [ [0,3,7,10,14],    [0,5,10,15],     [0,3,7,10,17]   ],   // m9, quartal, m11 — funk
+  loving:      [ [0,4,7,11,14],    [0,4,9,11,14],   [0,3,7,10,14]   ],   // maj9, 6/9, ii9
+  celebratory: [ [0,4,7,9,14],     [0,4,7,11,14],   [0,5,9,12,16]   ],   // 6/9, maj9, IV — horn stacks
+  dreamy:      [ [0,4,7,11,18],    [0,2,4,7,11],    [0,4,6,11,14]   ],   // maj7♯11 — lydian float
+  'alegría':   [ [0,4,7,12,16],    [0,5,9,12,17],   [-5,2,7,11,14]  ],   // I, IV, V7 — alegrías
+  duende:      [ [0,4,7,13],       [1,5,8,13],      [0,4,7,10,13]   ],   // I♭9, ♭II, I7♭9 — Andalusian cadence
+  ternura:     [ [0,4,7,9,14],     [0,3,7,10,14],   [0,4,7,11,14]   ],   // 6/9, ii9, maj9 — bolero
 };
 
 // Choir formant frequencies per voicing note index (root=low, upper=bright)
@@ -351,7 +365,14 @@ const MELODIES = {
   hopeful:     [[0,2,4,5,7,9,7],[2,4,5,7,9,11,9],[4,5,7,9,11,12,11]],
   analytical:  [[0,2,5,7,5,2,0],[2,5,7,9,7,5,2],[0,5,7,10,7,5,0]],
   nostalgic:   [[0,2,4,7,4,2,0],[2,4,7,9,7,4,2],[4,7,9,12,9,7,4]],
-  neutral:     [[0,2,4,7,4,2,0],[2,4,7,9,7,4,2],[0,4,7,9,7,4,0]],
+  grateful:    [[0,4,7,9,12,9,7],[12,10,9,7,4,2,0],[4,7,9,10,12,14,12]],
+  groovy:      [[0,3,5,6,7,10,12],[12,10,7,5,3,0,3],[0,3,0,5,6,7,10]],
+  loving:      [[7,9,11,12,11,9,7],[4,7,11,14,11,7,4],[0,4,7,11,12,14,16]],
+  celebratory: [[0,2,4,7,9,11,12],[12,11,9,7,4,2,0],[0,4,7,9,12,9,7]],
+  dreamy:      [[0,2,4,6,7,6,4],[7,6,4,2,4,6,11],[4,6,7,11,12,11,7]],
+  'alegría':   [[0,2,4,5,7,5,4],[7,9,11,12,11,9,7],[4,5,7,4,2,0,-1]],
+  duende:      [[7,8,7,5,4,1,0],[0,1,4,5,7,8,10],[12,10,8,7,5,4,1]],
+  ternura:     [[4,2,0,2,4,7,4],[9,7,4,7,9,12,9],[7,9,11,12,14,12,11]],
 };
 
 // ── Main music renderer ───────────────────────────────────────────────────────
@@ -423,7 +444,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx(), key = null) {
     bosc2.stop(bt + bDur + 0.05);
   });
 
-  const voicings = CHORD_VOICINGS[profile.label] || CHORD_VOICINGS.neutral;
+  const voicings = CHORD_VOICINGS[profile.label] || CHORD_VOICINGS.dreamy;
   const voicing  = voicings[paraIndex % voicings.length].map(tone);
 
   // ── Bass foundation — deep organ sub-tone ────────────────────────────────
@@ -454,7 +475,7 @@ export function playMoodMusic(profile, paraIndex, c = ctx(), key = null) {
 
   if (texture === 'melodic') {
     // Melody sung by choir, one octave up, lighter vibrato
-    const mel = (MELODIES[profile.label] || MELODIES.neutral)[paraIndex % 3].map(tone);
+    const mel = (MELODIES[profile.label] || MELODIES.dreamy)[paraIndex % 3].map(tone);
     const noteLen = beat * 0.62;
     mel.forEach((semi, i) => {
       const mf = root * Math.pow(2, (semi + 12) / 12);

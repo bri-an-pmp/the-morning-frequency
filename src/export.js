@@ -1,6 +1,6 @@
 // Builds the Word, PDF and WAV files and shares them
 import { playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
-import { MOODS } from './moods.js';
+import { moodProfile } from './moods.js';
 
 export function sessionParagraphs() {
   return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
@@ -187,7 +187,7 @@ export async function makeStreakWavBlob(streakEntries, milestone, onProgress = (
   const tracks = [...streakEntries]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .flatMap(e => (e.tracks || []).filter(Boolean))
-    .map(t => ({ musicIndex: t.musicIndex, key: t.key || null, profile: MOODS[t.moodData?.mood] || MOODS.neutral }));
+    .map(t => ({ musicIndex: t.musicIndex, key: t.key || null, profile: moodProfile(t.moodData?.mood) }));
   const total = tracks.length + (milestone ? 1 : 0);
   const buffers = [];
   for (const t of tracks) {

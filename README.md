@@ -22,7 +22,7 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 
 ## How It Works
 
-Each time you finish a paragraph, the app reads its mood: joyful, reflective, tense, melancholic, hopeful, analytical, nostalgic or neutral. By default it uses keyword matching. If you add an Anthropic API key under *music settings*, it asks Claude (claude-haiku-4-5) instead, which returns a mood, an energy level and how positive the paragraph feels.
+Each time you finish a paragraph, the app reads its mood: joyful, reflective, tense, melancholic, hopeful, analytical or nostalgic; five moods inspired by Stevie Wonder (grateful, groovy, loving, celebratory and dreamy); or three in Spanish from flamenco and bolero (alegría, duende and ternura). By default it uses keyword matching. If you add an Anthropic API key under *music settings*, it asks Claude (claude-haiku-4-5) instead, which returns a mood, an energy level and how positive the paragraph feels.
 
 That mood sets the music's key, tempo, chords, melody and texture. All the sound is generated live with the Web Audio API, with no audio files. Choir and organ voices run through a phaser, an echo and a long cathedral reverb, and a limiter keeps the sound from distorting. The third paragraph gets a fuller finale chord.
 

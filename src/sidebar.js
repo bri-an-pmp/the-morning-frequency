@@ -1,5 +1,5 @@
 // Left: entry history (like a chat history). Right: calendar of days with entries.
-import { MOODS } from './moods.js';
+import { moodProfile } from './moods.js';
 import { dayKey, entryTitle } from './journal.js';
 import { STREAK_MILESTONES } from './audio.js';
 
@@ -18,7 +18,7 @@ function groupLabel(createdAt, now = new Date()) {
 
 function moodColor(entry) {
   const mood = entry.tracks?.find(Boolean)?.moodData?.mood;
-  return mood && MOODS[mood] ? MOODS[mood].color : null;
+  return mood ? moodProfile(mood).color : null;
 }
 
 function el(tag, cls, text) {
@@ -53,7 +53,7 @@ export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
     const dots = el('span', 'history-dots');
     (entry.tracks || []).filter(Boolean).slice(0, 5).forEach(t => {
       const dot = el('i', 'mood-dot');
-      dot.style.background = (MOODS[t.moodData?.mood] || MOODS.neutral).color;
+      dot.style.background = moodProfile(t.moodData?.mood).color;
       dot.title = t.moodData?.mood || '';
       dots.append(dot);
     });

@@ -100,15 +100,7 @@
 
     <div class="manual-mood-wrap" id="manual-mood-wrap">
       <div class="setting-label">select mood</div>
-      <div class="mood-buttons">
-        <button class="mood-btn" data-mood="joyful">joyful</button>
-        <button class="mood-btn" data-mood="reflective">reflective</button>
-        <button class="mood-btn" data-mood="tense">tense</button>
-        <button class="mood-btn" data-mood="melancholic">melancholic</button>
-        <button class="mood-btn" data-mood="hopeful">hopeful</button>
-        <button class="mood-btn" data-mood="analytical">analytical</button>
-        <button class="mood-btn" data-mood="nostalgic">nostalgic</button>
-        <button class="mood-btn" data-mood="neutral">neutral</button>
+      <div class="mood-buttons"><!-- filled in from the mood list in moods.js -->
       </div>
     </div>
 
@@ -165,7 +157,7 @@
     <details class="api-key-row ai-mood">
       <summary>Smarter mood matching with Claude AI <span class="optional">optional</span></summary>
       <div class="ai-mood-body">
-        <p><strong>What it does:</strong> on its own, the app guesses your mood from certain words like “happy” or “worried”, so writing without those words often comes out as <em>neutral</em>. With a Claude key, Claude AI reads your whole paragraph, so the music matches what you actually mean.</p>
+        <p><strong>What it does:</strong> on its own, the app guesses your mood from certain words like “happy” or “worried”, so writing without those words often gets a generic mood. With a Claude key, Claude AI reads your whole paragraph, so the music matches what you actually mean.</p>
         <p><strong>What it costs:</strong> about a fifth of a cent per morning, paid to Anthropic (the company that makes Claude), not to us. Anthropic asks for $5 of credit to start, which covers years of daily writing.</p>
         <p><strong>How to set it up</strong> (about 5 minutes):</p>
         <ol>
