@@ -540,7 +540,25 @@ window.addEventListener('storage', async e => {
   renderSidebars();
 });
 
-document.getElementById('reset-btn').addEventListener('click', startNewEntry);
+// Reset: a clean slate. Erases this entry (writing, name and music) instead of keeping it,
+// which is the difference from "new entry". Other entries and settings aren't touched.
+async function resetEntry() {
+  const writer = document.getElementById('writer');
+  const hasContent = writer.value.trim() || titleEl.value.trim() || completedCount > 0;
+  if (!hasContent) { writer.focus(); return; }
+  if (!confirm('Start with a clean slate?\n\nThis erases this entry\'s writing, name and music. Your other entries aren\'t touched.')) return;
+  clearTimeout(saveTimer);
+  const id = currentId;
+  clearSession();
+  currentId = null; currentCreatedAt = null;
+  showDate(new Date());
+  if (id) entries = await deleteEntry(id);
+  renderSidebars();
+  notifTxt.textContent = 'clean slate — start writing whenever you\'re ready';
+  writer.focus();
+}
+document.getElementById('clear-btn').addEventListener('click', resetEntry);
+document.getElementById('new-entry-bottom').addEventListener('click', startNewEntry);
 document.getElementById('new-entry-btn').addEventListener('click', startNewEntry);
 
 // Save if the app is closed or sent to the background mid-sentence

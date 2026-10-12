@@ -367,6 +367,8 @@ textarea:focus ~ .corner { opacity: 0.9; }
 .reset-btn:hover { border-color: var(--muted); color: var(--text); }
 .session-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .session-actions .reset-btn { margin: 0; }
+.session-actions .clear-btn { margin-right: auto; }   /* reset sits apart, on the left */
+.clear-btn:hover { border-color: #c04b44; color: #c04b44; }
 .finish-btn { border-color: var(--accent1); background: var(--accent1); color: #fff; }
 .finish-btn:hover { background: #255f9f; color: #fff; }
 .finish-panel { display: none; margin-top: 20px; padding: 22px 24px; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: center; }
@@ -397,7 +399,10 @@ footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 25
   header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .settings-panel.open { grid-template-columns: minmax(0, 1fr); }
   textarea { min-height: 240px; padding: 22px 20px; }
-  .session-actions .reset-btn { flex: 1; }
+  .session-actions { flex-wrap: wrap; }
+  .session-actions .reset-btn { flex: 1; padding-left: 10px; padding-right: 10px; }
+  .session-actions .clear-btn { margin-right: 0; }
+  .session-actions .finish-btn { flex-basis: 100%; }
   .finish-buttons .reset-btn { width: 100%; }
   footer { flex-direction: column; gap: 6px; }
 }
