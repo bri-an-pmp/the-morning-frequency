@@ -22,10 +22,15 @@ let manualMood = null;
 let apiKey = localStorage.getItem('pm_api_key') || '';
 const GOAL = 3;
 
+function showKeyStatus(text, cls = '') {
+  const el = document.getElementById('key-status');
+  el.textContent = text;
+  el.className = 'key-status' + (cls ? ' ' + cls : '');
+  document.getElementById('remove-key-btn').hidden = !apiKey;
+}
 if (apiKey) {
   document.getElementById('api-key-input').value = apiKey;
-  document.getElementById('key-status').textContent = 'key saved — AI mood analysis active';
-  document.getElementById('key-status').className = 'key-status ok';
+  showKeyStatus('Saved — Claude is reading the mood of your writing.', 'ok');
 }
 
 function showDate(date) {
@@ -197,6 +202,7 @@ document.getElementById('writer').addEventListener('input', (e) => {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 document.getElementById('settings-toggle').addEventListener('click', toggleSettings);
 document.getElementById('save-key-btn').addEventListener('click', saveApiKey);
+document.getElementById('remove-key-btn').addEventListener('click', removeApiKey);
 document.getElementById('manual-override-toggle').addEventListener('change', e => toggleManualOverride(e.target.checked));
 document.querySelectorAll('.mood-btn').forEach(btn => btn.addEventListener('click', () => selectMood(btn)));
 document.getElementById('tempo-offset').addEventListener('input', e => {
@@ -214,14 +220,19 @@ function toggleSettings() {
 function saveApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
   if (!val || !val.startsWith('sk-')) {
-    document.getElementById('key-status').textContent = 'invalid key format';
-    document.getElementById('key-status').className = 'key-status err';
+    showKeyStatus('That doesn\'t look like a Claude key — it should start with sk-ant-. Copy it again from console.anthropic.com.', 'err');
     return;
   }
   apiKey = val;
   localStorage.setItem('pm_api_key', val);
-  document.getElementById('key-status').textContent = 'key saved — AI mood analysis active';
-  document.getElementById('key-status').className = 'key-status ok';
+  showKeyStatus('Saved — Claude is reading the mood of your writing.', 'ok');
+}
+
+function removeApiKey() {
+  apiKey = '';
+  localStorage.removeItem('pm_api_key');
+  document.getElementById('api-key-input').value = '';
+  showKeyStatus('Removed — back to word matching.');
 }
 
 function toggleManualOverride(on) {

@@ -89,15 +89,6 @@
 
   <div class="settings-panel" id="settings-panel">
 
-    <div class="api-key-row">
-      <div class="setting-label">Anthropic API key — enables AI mood analysis</div>
-      <div class="api-key-input-wrap">
-        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off"/>
-        <button class="save-key-btn" id="save-key-btn">save</button>
-      </div>
-      <div class="key-status" id="key-status">not set — mood detection uses keyword heuristics</div>
-    </div>
-
     <div class="override-row">
       <label class="toggle-wrap">
         <input type="checkbox" id="manual-override-toggle"/>
@@ -161,6 +152,29 @@
         <option value="rhythmic">rhythmic — pulse-driven</option>
       </select>
     </div>
+
+    <details class="api-key-row ai-mood">
+      <summary>Smarter mood matching with Claude AI <span class="optional">optional</span></summary>
+      <div class="ai-mood-body">
+        <p><strong>What it does:</strong> on its own, the app guesses your mood from certain words like “happy” or “worried”, so writing without those words often comes out as <em>neutral</em>. With a Claude key, Claude AI reads your whole paragraph, so the music matches what you actually mean.</p>
+        <p><strong>What it costs:</strong> about a fifth of a cent per morning, paid to Anthropic (the company that makes Claude), not to us. Anthropic asks for $5 of credit to start, which covers years of daily writing.</p>
+        <p><strong>How to set it up</strong> (about 5 minutes):</p>
+        <ol>
+          <li>Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> and create an account.</li>
+          <li>Open <strong>Billing</strong> and add $5 of credit.</li>
+          <li>Open <strong>API Keys</strong>, click <strong>Create Key</strong>, and copy it (it starts with <code>sk-ant-</code>).</li>
+          <li>Paste it below and tap <strong>save</strong>.</li>
+        </ol>
+        <div class="setting-label">your Claude key</div>
+        <div class="api-key-input-wrap">
+          <input type="password" id="api-key-input" placeholder="paste your key (sk-ant-...)" autocomplete="off" aria-label="Your Claude API key"/>
+          <button class="save-key-btn" id="save-key-btn">save</button>
+          <button class="save-key-btn" id="remove-key-btn" hidden>remove</button>
+        </div>
+        <div class="key-status" id="key-status">Not set — using word matching.</div>
+        <p class="ai-mood-privacy">Your key is saved only on this device. With a key, each paragraph is sent to Anthropic to read its mood. Without one, your writing never leaves your device.</p>
+      </div>
+    </details>
 
   </div>
 
