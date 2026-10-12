@@ -13,6 +13,7 @@ import {
 } from './export.js';
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
 import { renderHistory, renderCalendar } from './sidebar.js';
+import { makeStory } from './story.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -405,6 +406,75 @@ wireButton('download-wav',  async () => saveBlob(await prepared.wav,  sessionFil
 wireButton('share-writing', async () => shareFile(await prepared.pdf, sessionFilename('pdf'), 'application/pdf'));
 wireButton('share-music',   async () => shareFile(await prepared.wav, sessionFilename('wav'), 'audio/wav'));
 
+// ─── Share to story (Instagram / TikTok / Facebook) ───────────────────────────
+const storyEls = {
+  section: document.getElementById('story-section'),
+  line: document.getElementById('story-line'),
+  make: document.getElementById('make-story'),
+  result: document.getElementById('story-result'),
+  video: document.getElementById('story-preview'),
+  image: document.getElementById('story-image'),
+  share: document.getElementById('share-story'),
+  download: document.getElementById('download-story'),
+  note: document.getElementById('story-note'),
+};
+let story = null;   // { blob, ext, type, url }
+
+function resetStory() {
+  if (story) URL.revokeObjectURL(story.url);
+  story = null;
+  storyEls.result.classList.remove('show');
+  storyEls.video.classList.remove('show'); storyEls.video.removeAttribute('src');
+  storyEls.image.classList.remove('show'); storyEls.image.removeAttribute('src');
+  storyEls.make.textContent = 'make story video';
+}
+
+// Editing the line after making the video means the video needs remaking
+storyEls.line.addEventListener('input', () => { if (story) { resetStory(); storyEls.make.textContent = 'remake story video'; } });
+
+storyEls.make.addEventListener('click', async () => {
+  resetStory();
+  const gen = sessionGen;
+  storyEls.make.disabled = true; storyEls.line.disabled = true;
+  storyEls.make.textContent = 'making your video...';
+  try {
+    const date = new Date(currentCreatedAt || Date.now()).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const made = await makeStory(sessionTracks, {
+      date,
+      line: storyEls.line.value.trim(),
+      onProgress: p => { storyEls.make.textContent = `making your video... ${Math.round(p * 100)}%`; },
+    });
+    if (gen !== sessionGen) { storyEls.make.textContent = 'make story video'; return; }   // switched entries meanwhile
+    story = { ...made, url: URL.createObjectURL(made.blob) };
+    const isVideo = made.type.startsWith('video/');
+    const preview = isVideo ? storyEls.video : storyEls.image;
+    preview.src = story.url;
+    preview.classList.add('show');
+    storyEls.download.textContent = isVideo ? 'download video' : 'download picture';
+    const canShare = canShareFiles([new File([made.blob], sessionFilename(made.ext), { type: made.type })]);
+    storyEls.share.style.display = canShare ? '' : 'none';
+    storyEls.note.textContent = canShare
+      ? 'Tap "share to story", choose Instagram, TikTok or Facebook, then pick Story.'
+      : 'Download it, then post it to your story from your phone.';
+    if (!isVideo) storyEls.note.textContent += ' (This browser can\'t make videos, so you get a picture instead.)';
+    storyEls.result.classList.add('show');
+    storyEls.make.textContent = 'remake story video';
+    storyEls.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    console.error(e);
+    storyEls.make.textContent = 'make story video';
+    alert('Sorry, the video couldn\'t be made on this device. Try again, or use a different browser.');
+  } finally {
+    storyEls.make.disabled = false; storyEls.line.disabled = false;
+  }
+});
+
+wireButton('share-story', async () => {
+  const files = [new File([story.blob], sessionFilename(story.ext), { type: story.type })];
+  await navigator.share({ files });
+});
+wireButton('download-story', async () => saveBlob(story.blob, sessionFilename(story.ext)));
+
 // Show "save to cloud / share" only where the device has a share menu that accepts files
 if (canShareFiles([new File(['x'], 'test.pdf', { type: 'application/pdf' })])) {
   document.querySelectorAll('.share-btn').forEach(b => b.classList.add('available'));
@@ -426,6 +496,8 @@ document.getElementById('finish-btn').addEventListener('click', () => {
   document.getElementById('finish-note').textContent = hasMusic
     ? (document.querySelector('.share-btn.available') ? '"save to cloud / share" opens your device\'s share menu — iCloud Drive, Google Drive, Dropbox, email and more.' : '')
     : 'No music yet — press Enter twice after a paragraph to create some.';
+  storyEls.section.classList.toggle('show', hasMusic);
+  resetStory();
   prepareFiles();
   const panel = document.getElementById('finish-panel');
   panel.classList.add('show');

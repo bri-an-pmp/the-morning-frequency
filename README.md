@@ -16,7 +16,8 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 2. Press **Enter (return) twice** to hear your frequency and start a new paragraph.
 3. After three paragraphs, your morning is complete. Click any colored bar under the progress ring to replay that paragraph's sound.
 4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email.
-5. Every entry saves automatically. Find past entries in **Your entries** on the left (like a chat history) and see the days you wrote on the **calendar** on the right, along with your streak. On a phone, open them with the buttons at the top of the screen.
+5. Tap **make story video** to turn your music into a short video for Instagram, TikTok or Facebook stories, then **share to story**. Your writing stays private unless you choose to add a line.
+6. Every entry saves automatically. Find past entries in **Your entries** on the left (like a chat history) and see the days you wrote on the **calendar** on the right, along with your streak. On a phone, open them with the buttons at the top of the screen.
 
 ## How It Works
 
@@ -24,7 +25,7 @@ Each time you finish a paragraph, the app reads its mood: joyful, reflective, te
 
 That mood sets the music's key, tempo, chords, melody and texture. All the sound is generated live with the Web Audio API, with no audio files. Choir and organ voices run through a phaser, an echo and a long cathedral reverb, and a limiter keeps the sound from distorting. The third paragraph gets a fuller finale chord.
 
-When you finish a session, the app builds your files in the browser. It turns your paragraphs into a Word document and a PDF, and re-renders each paragraph's music in high quality, joined into one WAV recording. "Save to cloud / share" uses your device's own share menu, so there's no account to connect.
+When you finish a session, the app builds your files in the browser. It turns your paragraphs into a Word document and a PDF, and re-renders each paragraph's music in high quality, joined into one WAV recording. The story video is drawn on a canvas with a ring that moves with your music, recorded in the browser and saved as a tall MP4 ready for stories. "Save to cloud / share" uses your device's own share menu, so there's no account to connect.
 
 ## Tech Stack
 
@@ -32,7 +33,7 @@ Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the
 
 ## Project Structure
 
-index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing), journal.js (saving entries), sidebar.js (the entry history and calendar) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
+index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing), story.js (the story video), journal.js (saving entries), sidebar.js (the entry history and calendar) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
 ## Privacy
 

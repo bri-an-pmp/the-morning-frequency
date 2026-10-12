@@ -56,7 +56,7 @@ export async function makePdfBlob() {
 }
 
 // ── Audio export: re-render each paragraph's music offline, join, encode as WAV ──
-async function renderTrack(t) {
+export async function renderTrack(t) {
   const sr = 44100;
   const seconds = 4.0 + (1 - t.profile.energy) * 2.0 + 7.0;   // chord + full fade tail
   const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;

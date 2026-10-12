@@ -384,6 +384,15 @@ textarea:focus ~ .corner { opacity: 0.9; }
 .share-btn { display: none; }
 .share-btn.available { display: inline-block; }
 .finish-note { font-size: 11px; color: var(--muted); margin-top: 14px; }
+.story-section { display: none; }
+.story-section.show { display: block; }
+.story-sub { font-size: 12px; color: var(--muted2); margin: 0 auto 10px; max-width: 440px; }
+.story-line { display: block; width: 100%; max-width: 440px; margin: 0 auto 12px; padding: 10px 14px; border: 1px solid var(--border2); border-radius: 999px; background: var(--surface2); color: var(--text); font-family: 'Nunito', sans-serif; font-size: 14px; text-align: center; }
+.story-line:focus { outline: none; border-color: var(--accent1); }
+.story-result { display: none; margin-top: 16px; }
+.story-result.show { display: block; }
+.story-preview { display: none; width: 100%; max-width: 220px; aspect-ratio: 9 / 16; margin: 0 auto 12px; border-radius: 14px; box-shadow: var(--shadow); background: #c7e3f9; object-fit: cover; }
+.story-preview.show { display: block; }
 
 footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.7); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; display: flex; justify-content: space-between; }
 

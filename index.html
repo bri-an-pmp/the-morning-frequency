@@ -205,6 +205,23 @@
       <button class="reset-btn" id="download-wav">download audio (.wav)</button>
       <button class="reset-btn share-btn" id="share-music">save to cloud / share</button>
     </div>
+    <div class="story-section" id="story-section">
+      <div class="finish-row-label">your story</div>
+      <div class="story-sub">A short video of your music for Instagram, TikTok or Facebook stories. Your writing stays private unless you add a line.</div>
+      <input class="story-line" id="story-line" type="text" maxlength="140" placeholder="add a line from your writing (optional)" aria-label="Optional line to show in your story video">
+      <div class="finish-buttons">
+        <button class="reset-btn finish-btn" id="make-story">make story video</button>
+      </div>
+      <div class="story-result" id="story-result">
+        <video class="story-preview" id="story-preview" controls playsinline></video>
+        <img class="story-preview" id="story-image" alt="Your story picture">
+        <div class="finish-buttons">
+          <button class="reset-btn finish-btn" id="share-story">share to story</button>
+          <button class="reset-btn" id="download-story">download video</button>
+        </div>
+        <div class="finish-note" id="story-note"></div>
+      </div>
+    </div>
     <div class="finish-note" id="finish-note"></div>
   </div>
 
