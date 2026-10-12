@@ -23,27 +23,37 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 
 ## How It Works
 
-Each time you finish a paragraph, the app reads its mood: joyful, reflective, tense, melancholic, hopeful, analytical or nostalgic; five moods inspired by Stevie Wonder (grateful, groovy, loving, celebratory and dreamy); or three in Spanish from flamenco and bolero (alegría, duende and ternura). By default it uses keyword matching. If you add an Anthropic API key under *music settings*, it asks Claude (claude-haiku-4-5) instead, which returns a mood, an energy level and how positive the paragraph feels.
+Each time you finish a paragraph, the app reads its mood: joyful, reflective, tense, melancholic, hopeful, analytical or nostalgic; five moods inspired by Stevie Wonder (grateful, groovy, loving, celebratory and dreamy); or three in Spanish from flamenco and bolero (alegría, duende and ternura). By default it uses keyword matching (in English and Spanish). If you add a Claude key under *music settings → Smarter mood matching*, it asks Claude (claude-haiku-4-5) instead, which reads the whole paragraph and returns a mood, an energy level and how positive it feels.
 
-That mood sets the music's key, tempo, chords, melody and texture. All the sound is generated live with the Web Audio API, with no audio files. Choir and organ voices run through a phaser, an echo and a long cathedral reverb, and a limiter keeps the sound from distorting. The third paragraph gets a fuller finale chord.
+That mood sets the music's tempo, chords, melody and texture. The key comes from the circle of fifths: you pick a home key, and each paragraph moves one step around the circle, so the paragraphs flow into each other like a chord progression (the inner, minor ring gives a darker sound). All the sound is generated live with the Web Audio API, with no audio files. Choir, organ and bell voices run through a phaser, a chorus, two echoes and a long cathedral reverb, and a limiter keeps the sound from distorting. The third paragraph gets a fuller finale chord, and streak milestones (3, 5, 10, 14, 21 and 30 days) each have their own fanfare.
 
-When you finish a session, the app builds your files in the browser. It turns your paragraphs into a Word document and a PDF, and re-renders each paragraph's music in high quality, joined into one WAV recording. The story video is drawn on a canvas with a ring that moves with your music, recorded in the browser and saved as a tall MP4 ready for stories. "Save to cloud / share" uses your device's own share menu, so there's no account to connect.
+When you finish a session, the app builds your files in the browser, named with the date and your entry name. It turns your paragraphs into a Word document and a PDF, and re-renders each paragraph's music in high quality, joined into one WAV recording with no gaps. The story video is drawn on a canvas with a ring that moves with your music, recorded in the browser and saved as a tall MP4 ready for stories. "Save to cloud / share" uses your device's own share menu, so there's no account to connect.
 
 ## Tech Stack
 
-Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the iPhone app, the Web Audio API for music and audio rendering, the Anthropic API (optional) for mood analysis, docx and jsPDF for the Word and PDF downloads, the Web Share API for saving to the cloud, self-hosted fonts (DM Serif Display, DM Mono, Nunito), and GitHub Pages for hosting.
+Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the iPhone app (with Capacitor Preferences for saving entries), the Web Audio API for music and audio rendering, Canvas and MediaRecorder for the story video, the Anthropic API (optional) for mood analysis, docx and jsPDF 4 for the Word and PDF downloads, the Web Share API for saving to the cloud, self-hosted fonts (DM Serif Display, DM Mono, Nunito), and GitHub Pages for hosting.
 
 ## Project Structure
 
-index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (mood profiles and detection), export.js (Word, PDF and WAV files and sharing), story.js (the story video), journal.js (saving entries), sidebar.js (the entry history and calendar) and styles.css (the sky design). The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
+index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (the 15 mood profiles and detection), circle.js (the circle of fifths wheel), theme.js (the color themes), export.js (Word, PDF and WAV files, the streak mix and sharing), story.js (the story video), journal.js (saving entries safely), sidebar.js (the entry history, calendar and streaks) and styles.css (the sky design). vite.config.js adds the security policy to the built site. The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
-## Privacy
+## Privacy and Security
 
-Your writing is saved only on your own device (in the browser on the website, or on your iPhone in the app) and is never stored on a server. If you add an API key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis.
+Your writing is saved only on your own device (in the browser on the website, or on your iPhone in the app) and is never stored on a server. Without a Claude key, your writing never leaves your device. If you add a key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis.
+
+The app was reviewed for security weaknesses, and these protections are built in:
+
+- A Content Security Policy lets the page run only its own code and talk only to itself and Claude's API.
+- Claude's replies are checked before use (real moods only, values kept in range), and the paragraph is marked as text to analyze, not instructions.
+- Saved entries and settings are checked and repaired when loaded; unreadable data is backed up instead of being overwritten; saves happen one at a time so they can't undo each other.
+- Held-down keys can't flood the audio, blank lines don't trigger extra Claude calls, and long streak mixes are built a piece at a time to stay within phone memory.
+- Dependencies are checked with npm audit (jsPDF was upgraded to 4.2.1 for a critical advisory).
+
+Known limits: the website shares the bri-an-pmp.github.io address with other GitHub Pages sites on the same account, and a Claude key kept in the browser is only as safe as that browser. A custom domain, or the on-device mood detection planned for the iPhone app, removes both.
 
 ## Setup
 
-Install Node.js 22, then run npm install. Use npm run dev to work on the site locally, and npm run build to create the production files in dist/. For the iPhone app (Xcode required), run npm run ios to copy the latest build into the iOS project, then open ios/App/App.xcodeproj in Xcode. Mood detection works without a key; for Claude-powered mood detection, paste your Anthropic API key under *music settings* and click save.
+Install Node.js 22, then run npm install. Use npm run dev to work on the site locally, and npm run build to create the production files in dist/. For the iPhone app (Xcode required), run npm run ios to copy the latest build into the iOS project, then open ios/App/App.xcodeproj in Xcode. Mood detection works without a key; for Claude-powered mood detection, open *music settings → Smarter mood matching* and follow the steps there. Run npm run lint and npm audit before publishing.
 
 ## Deployment
 
