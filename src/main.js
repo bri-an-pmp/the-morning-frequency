@@ -226,13 +226,27 @@ document.getElementById('writer').addEventListener('input', (e) => {
   const paras = (text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
   document.getElementById('para-count-meta').textContent = paras + ' paragraph' + (paras!==1?'s':'') + ' detected';
   // Some Android keyboards don't report insertLineBreak, so also check for a new newline at the caret
+  const caret = el.selectionStart;
+  const added = text.length - prevText.length;
+  // Phone dictation ("new paragraph" said into the keyboard's microphone) inserts a whole phrase
+  // with line breaks inside it, so look for a break anywhere in what was just inserted.
+  // (Pasting multi-line text doesn't count.)
+  const pasted = e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop';
+  const chunk = added > 1 && !pasted ? text.slice(Math.max(0, caret - added), caret) : '';
+  const dictatedBreak = chunk.includes('\n');
   const newlineTyped = e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph' ||
-    (text.length === prevText.length + 1 && text[el.selectionStart - 1] === '\n');
+    (added === 1 && text[caret - 1] === '\n') || dictatedBreak;
   prevText = text;
   scheduleSave();
   if (!newlineTyped) return;
-  const before = text.slice(0, el.selectionStart).split('\n').slice(0, -1);
-  const justFinished = (before[before.length - 1] || '').trim();
+  const before = text.slice(0, caret).split('\n').slice(0, -1);
+  let justFinished = (before[before.length - 1] || '').trim();
+  if (dictatedBreak && !justFinished) {
+    // The paragraph arrived together with its blank line(s): it's the last line with text,
+    // unless that one was already counted
+    const lastText = [...before].reverse().find(l => l.trim()) || '';
+    if (before.filter(l => l.trim()).length - 1 >= completedCount) justFinished = lastText.trim();
+  }
   if (justFinished) {
     // Which paragraph is this? Count the lines with text up to the cursor. If it's one that
     // was already counted (the writer went back to edit it), redo that one instead of adding a new one.

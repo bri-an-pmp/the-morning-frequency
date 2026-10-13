@@ -12,7 +12,7 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 
 ## How to Use It
 
-1. Turn your sound on, name your entry if you like, and type a paragraph, or tap **🎤 speak instead of typing** and say "new paragraph" when you finish one. Any length counts, even one word.
+1. Turn your sound on, name your entry if you like, and type a paragraph, or tap **🎤 speak instead of typing** and say "new paragraph" (or "enter twice", "play my music", "nuevo párrafo") when you finish one, or just pause for 5 seconds. Dictating with the phone keyboard's microphone works too. Any length counts, even one word.
 2. Press **Enter (return) twice** to hear your frequency and start a new paragraph.
 3. After three paragraphs, your morning is complete. Click any colored bar under the progress ring to replay that paragraph's sound.
 4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), named with the date and your entry name, or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email. **Save to Apple Notes** keeps one running note: each day is added underneath with its own date and title.

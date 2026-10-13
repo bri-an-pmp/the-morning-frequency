@@ -563,3 +563,11 @@ h1.logo { margin: 0; font-weight: 400; }
 .font-btn[aria-pressed="true"] { background: var(--accent1); border-color: var(--accent1); color: #fff; }
 @media (max-width: 600px) { .font-choice { justify-content: flex-start; } }
 @media (pointer: coarse) { .font-btn { min-height: 44px; } }
+
+.voice-help { font-size: calc(15px * var(--ts, 1)); line-height: 1.5; color: var(--text); }
+.voice-help strong { color: var(--accent1); }
+.voice-option { display: flex; align-items: center; gap: 10px; font-size: calc(14px * var(--ts, 1)); color: var(--muted2); cursor: pointer; min-height: 32px; }
+.voice-option input { width: 22px; height: 22px; accent-color: var(--accent1); flex-shrink: 0; }
+.voice-status { padding: 10px 14px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border2); }
+.voice-status.heard { border-color: var(--accent1); }
+@media (pointer: coarse) { .voice-option { min-height: 44px; } }

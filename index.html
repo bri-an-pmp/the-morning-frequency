@@ -210,11 +210,13 @@
 
   </div>
 
-  <div class="enter-hint" id="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice to hear your frequency and start a new paragraph.</div>
+  <div class="enter-hint" id="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice, or say “new paragraph”, to hear your frequency and start a new paragraph.</div>
   <input class="entry-title" id="entry-title" type="text" maxlength="80" autocomplete="off"
     placeholder="Name this entry (optional)" aria-label="Entry name">
   <div class="voice-row">
-    <button type="button" class="voice-btn" id="voice-btn" aria-pressed="false">🎤 speak instead of typing</button>
+    <button type="button" class="voice-btn" id="voice-btn" aria-pressed="false" aria-describedby="voice-help">🎤 speak instead of typing</button>
+    <p class="voice-help" id="voice-help">Tap, then talk. When you finish a thought, say <strong>“new paragraph”</strong> to hear your music<span id="voice-help-pause"> — or just pause for 5 seconds</span>.</p>
+    <label class="voice-option"><input type="checkbox" id="voice-autopause" checked> Play my music when I pause for 5 seconds</label>
     <p class="voice-status" id="voice-status" role="status" aria-live="polite" hidden></p>
   </div>
   <div class="editor-wrap">
