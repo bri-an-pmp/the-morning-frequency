@@ -38,6 +38,7 @@ Plain HTML, CSS and JavaScript modules with no framework, bundled by Vite.
 - **Don't fail silently.** If something the user asked for doesn't work (a Claude key, a video, a download), tell them in plain words what happened and what to do.
 - **UI wording.** Say "Enter (return)". Instructions must stay visible and simple. The writer may be on a phone: keep tap targets at least 44px, inputs at least 16px, and no horizontal scrolling at 390px wide.
 - **Audio.** New voices connect to `chain.bus`. Schedule times must be finite and not negative (OfflineAudioContext throws). Long renders should be processed incrementally to fit in phone memory.
+- **Accessibility (older and low-vision users).** Use `calc(Npx * var(--ts, 1))` for font sizes so the text-size buttons work, and nothing under 13px for reading text. Text colors must reach 4.5:1 contrast; run mood colors through `readable()` from `theme.js` before using them as text. Every control needs an accessible name, and status changes go in an `aria-live` region. Don't hide controls behind hover.
 - **iPhone app.** Bundle ID `com.brianathey.morningfrequency`, iPhone only. Downloads and the share sheet don't work inside the app yet (native save/share is planned); don't assume browser downloads work there.
 
 ## Checking changes

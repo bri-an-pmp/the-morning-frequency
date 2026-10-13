@@ -131,7 +131,7 @@ export function renderCalendar(root, entries, month, activeId, { onPickDay, onMo
     const cell = el('button', 'cal-day');
     cell.type = 'button';
     cell.append(el('span', 'cal-num', String(day)));
-    if (key === todayKey) cell.classList.add('today');
+    if (key === todayKey) { cell.classList.add('today'); cell.setAttribute('aria-current', 'date'); }
     if (activeDay && dayKey(activeDay.createdAt) === key) cell.classList.add('selected');
     if (dayEntries.length) {
       cell.classList.add('has-entry');

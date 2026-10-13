@@ -14,8 +14,20 @@ function mix(a, b, t) {   // t = how much of b
   return '#' + A.map((v, i) => Math.round(v * (1 - t) + B[i] * t).toString(16).padStart(2, '0')).join('');
 }
 
+function luminance(hex) {
+  return hexToRgb(hex).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+    .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+}
+// Darken a color just enough that text in it (or white text on it) is easy to read
+export function readable(hex) {
+  let c = hex;
+  for (let i = 0; i < 20 && (1.05 / (luminance(c) + 0.05)) < 4.8; i++) c = mix(c, '#000000', 0.08);
+  return c;
+}
+
 // Every color the page uses, worked out from one accent color
-function paletteFor(color) {
+function paletteFor(raw) {
+  const color = readable(raw);
   const [r, g, b] = hexToRgb(color);
   return {
     '--accent1': color,

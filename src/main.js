@@ -15,7 +15,7 @@ import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journ
 import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
 import { makeStory } from './story.js';
 import { initCircle, keyForStep, setCircleStep } from './circle.js';
-import { initThemes, followMood } from './theme.js';
+import { initThemes, followMood, readable } from './theme.js';
 import { initVoice } from './voice.js';
 import { notesText, notesStarted, saveToNotes } from './notes.js';
 
@@ -64,14 +64,31 @@ function showMoodResult(moodData, key = null) {
   const p = moodProfile(moodData.mood);
   moodBadge.textContent = p.label;
   moodBadge.className = 'mood-badge visible';
-  moodBadge.style.setProperty('--mood-color', p.color);
+  moodBadge.style.setProperty('--mood-color', readable(p.color));
   followMood(p.label);
   const desc = key ? describeKey(p, key) + ' · ' + p.desc.split(' · ').slice(2).join(' · ') : p.desc;
   moodParam.textContent = desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
   moodParam.classList.add('visible');
 }
 
+// Replay bars are real buttons, so they work with a keyboard and are read out by screen readers
+function markPipDone(i, mood) {
+  pips[i].classList.add('done');
+  pips[i].disabled = false;
+  pips[i].title = `replay paragraph ${i+1} — ${mood}`;
+  pips[i].setAttribute('aria-label', `Replay paragraph ${i+1}, ${mood}`);
+}
+function resetPips() {
+  pips.forEach((p, i) => {
+    p.className = 'para-pip';
+    p.disabled = true;
+    p.removeAttribute('title');
+    p.setAttribute('aria-label', `Paragraph ${i+1}, not written yet`);
+  });
+}
+
 function updateRing(n) {
+  document.getElementById('ring-count').setAttribute('aria-label', `${n} of ${GOAL} paragraphs written`);
   ringEl.style.strokeDashoffset = 226 * (1 - n/GOAL);
   countEl.textContent = n;
   ringEl.style.stroke = ['var(--accent1)','var(--accent2)','var(--accent3)'][n-1];
@@ -138,8 +155,7 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   if (index !== null) { sessionTracks[index] = { profile, musicIndex, moodData, key }; scheduleSave(0); }
   setCircleStep(completedCount);
   if (onGoal) {
-    pips[index].classList.add('done');
-    pips[index].title = `replay paragraph ${index+1} — ${moodData.mood}`;
+    markPipDone(index, profile.label);
     document.getElementById('pip-hint').classList.add('visible');
   }
   const token = ++playToken;
@@ -237,7 +253,7 @@ document.querySelector('.mood-buttons').append(...Object.values(MOODS).map(p => 
   btn.dataset.mood = p.label;
   btn.textContent = p.label;
   btn.title = MOOD_MEANINGS[p.label] + ' — ' + p.desc;
-  btn.style.setProperty('--mood-color', p.color);
+  btn.style.setProperty('--mood-color', readable(p.color));
   return btn;
 }));
 document.querySelectorAll('.mood-btn').forEach(btn => btn.addEventListener('click', () => selectMood(btn)));
@@ -260,9 +276,19 @@ document.getElementById('volume').addEventListener('input', e => {
 });
 
 function toggleSettings() {
-  document.getElementById('settings-toggle').classList.toggle('open');
-  document.getElementById('settings-panel').classList.toggle('open');
+  const btn = document.getElementById('settings-toggle');
+  btn.classList.toggle('open');
+  btn.setAttribute('aria-expanded', document.getElementById('settings-panel').classList.toggle('open') ? 'true' : 'false');
 }
+
+// Text size: normal, large or extra large, remembered between visits
+function setTextSize(ts) {
+  document.documentElement.style.setProperty('--ts', ts);
+  document.querySelectorAll('.ts-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.ts === ts ? 'true' : 'false'));
+  try { localStorage.setItem('tmf_text_size', ts); } catch (e) { /* not essential */ }
+}
+document.querySelectorAll('.ts-btn').forEach(b => b.addEventListener('click', () => setTextSize(b.dataset.ts)));
+try { const ts = localStorage.getItem('tmf_text_size'); if (['1', '1.2', '1.4'].includes(ts)) setTextSize(ts); } catch (e) { /* default */ }
 
 function saveApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
@@ -299,10 +325,10 @@ function clearSession() {
   document.getElementById('writer').value = '';
   titleEl.value = '';
   completedCount = 0; enterCount = 0; sessionTracks = []; prevText = '';
-  pips.forEach(p => p.removeAttribute('title'));
+  resetPips();
+  document.getElementById('ring-count').setAttribute('aria-label', `0 of ${GOAL} paragraphs written`);
   document.getElementById('pip-hint').classList.remove('visible');
   countEl.textContent = '0'; ringEl.style.strokeDashoffset = '226'; ringEl.style.stroke = 'var(--accent1)';
-  pips.forEach(p => { p.className = 'para-pip'; });
   setWave('var(--accent1)', false);
   notifEl.className = 'notif';
   notifTxt.textContent = 'waiting for your first paragraph...';
@@ -502,8 +528,7 @@ async function openEntry(entry) {
   for (let i = 0; i < done; i++) {
     pips[i].classList.add(pipCls[i]);
     if (sessionTracks[i]) {
-      pips[i].classList.add('done');
-      pips[i].title = `replay paragraph ${i+1} — ${sessionTracks[i].moodData.mood}`;
+      markPipDone(i, sessionTracks[i].profile.label);
     }
   }
   if (done) updateRing(done);

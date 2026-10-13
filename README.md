@@ -12,10 +12,10 @@ https://bri-an-pmp.github.io/the-morning-frequency/
 
 ## How to Use It
 
-1. Turn your sound on, name your entry if you like, and type a paragraph. Any length counts, even one word.
+1. Turn your sound on, name your entry if you like, and type a paragraph, or tap **🎤 speak instead of typing** and say "new paragraph" when you finish one. Any length counts, even one word.
 2. Press **Enter (return) twice** to hear your frequency and start a new paragraph.
 3. After three paragraphs, your morning is complete. Click any colored bar under the progress ring to replay that paragraph's sound.
-4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), named with the date and your entry name, or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email.
+4. Click **Finish Session** to download your writing (Word or PDF) and your music (WAV), named with the date and your entry name, or tap **save to cloud / share** to send them to iCloud Drive, Google Drive, Dropbox or email. **Save to Apple Notes** keeps one running note: each day is added underneath with its own date and title.
 5. Tap **make story video** to turn your music into a short video for Instagram, TikTok or Facebook stories, then **share to story**. Your writing stays private unless you choose to add a line.
 6. Every entry saves automatically. Use **new entry** to keep this one and start another, or **reset** to erase this entry and start with a clean slate. Find past entries in **Your entries** on the left (like a chat history) and see the days you wrote on the **calendar** on the right, along with your streak. On a phone, open them with the buttons at the top of the screen.
 7. Write on 3, 5, 10, 14, 21 and 30 days in a row to unlock streak sounds, each with its own key and bells, grander at every milestone. Each streak also earns a **streak mix**: every paragraph's music from the whole streak in one continuous piece, ending with the milestone sound, to play, download or share.
@@ -37,9 +37,20 @@ Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the
 
 index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (the 15 mood profiles and detection), circle.js (the circle of fifths wheel), theme.js (the color themes), export.js (Word, PDF and WAV files, the streak mix and sharing), story.js (the story video), journal.js (saving entries safely), sidebar.js (the entry history, calendar and streaks) and styles.css (the sky design). vite.config.js adds the security policy to the built site. The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
+## Accessibility
+
+Built for older writers and people with low vision, and checked against WCAG 2.2 AA with axe-core (no violations on desktop or phone, in every color theme):
+
+- **Text size** buttons (normal, large, extra large) at the top, remembered between visits; browser zoom works too.
+- Strong contrast: text and theme colors are darkened automatically until they're easy to read, and the page follows the device's "increase contrast" setting.
+- Every button, slider and menu has a name for screen readers; music, mood and progress updates are announced; the replay bars are real buttons.
+- A clear focus outline for keyboard users, large tap targets, and no controls that only appear on hover.
+- Animations stop when the device is set to reduce motion.
+- Voice input for people who'd rather not type.
+
 ## Privacy and Security
 
-Your writing is saved only on your own device (in the browser on the website, or on your iPhone in the app) and is never stored on a server. Without a Claude key, your writing never leaves your device. If you add a key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis.
+Your writing is saved only on your own device (in the browser on the website, or on your iPhone in the app) and is never stored on a server. Without a Claude key, your writing never leaves your device. If you add a key, it's saved only on your own device, and your paragraphs are sent only to Anthropic for mood analysis. When you use voice input, your device's speech service (Apple in Safari, Google in Chrome) turns your voice into text.
 
 The app was reviewed for security weaknesses, and these protections are built in:
 

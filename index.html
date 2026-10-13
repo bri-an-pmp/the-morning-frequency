@@ -25,7 +25,7 @@
   <nav class="history-list" id="history-list"></nav>
 </aside>
 
-<div class="container">
+<main class="container" id="main">
 
   <div class="topbar">
     <button class="icon-btn" id="open-history" type="button" aria-label="Show your entries" aria-controls="history">
@@ -37,19 +37,27 @@
   </div>
 
   <header>
-    <div class="logo">the morning <em>frequency</em></div>
-    <div class="date-stamp" id="date-stamp"></div>
+    <h1 class="logo">the morning <em>frequency</em></h1>
+    <div class="header-right">
+      <div class="date-stamp" id="date-stamp"></div>
+      <div class="text-size" role="group" aria-label="Text size">
+        <span class="text-size-label" aria-hidden="true">text size</span>
+        <button type="button" class="ts-btn" data-ts="1" aria-label="Normal text" aria-pressed="true">A</button>
+        <button type="button" class="ts-btn ts-lg" data-ts="1.2" aria-label="Large text" aria-pressed="false">A</button>
+        <button type="button" class="ts-btn ts-xl" data-ts="1.4" aria-label="Extra large text" aria-pressed="false">A</button>
+      </div>
+    </div>
   </header>
 
-  <p class="how-to">Turn your sound on and type a paragraph below — any length, even one word. <strong>Press Enter (return) twice to hear your frequency and start a new paragraph.</strong> Once you've finished 3 paragraphs, click <strong>Finish Session</strong> below to save your writing and music.</p>
+  <p class="how-to">Turn your sound on and type a paragraph below — any length, even one word. <strong>Press Enter (return) twice to hear your frequency and start a new paragraph.</strong> Once you've finished 3 paragraphs, tap <strong>Finish Session</strong> below to save your writing and music.</p>
 
   <div class="progress-section">
     <div class="ring-wrap">
-      <svg class="ring-svg" viewBox="0 0 88 88">
+      <svg class="ring-svg" viewBox="0 0 88 88" aria-hidden="true">
         <circle class="ring-bg" cx="44" cy="44" r="36"/>
         <circle class="ring-fill" id="ring" cx="44" cy="44" r="36"/>
       </svg>
-      <div class="ring-count">
+      <div class="ring-count" role="img" aria-live="polite" id="ring-count" aria-label="0 of 3 paragraphs written">
         <span id="count-num">0</span>
         <span class="ring-label">of 3</span>
       </div>
@@ -58,32 +66,32 @@
       <div class="progress-title" id="progress-title">Start writing.</div>
       <div class="progress-sub" id="progress-sub">Each paragraph unlocks music tuned to what you wrote. Finish 3 for your morning frequency.</div>
       <div class="para-indicators">
-        <div class="para-pip" id="pip1"></div>
-        <div class="para-pip" id="pip2"></div>
-        <div class="para-pip" id="pip3"></div>
+        <button type="button" class="para-pip" id="pip1" aria-label="Paragraph 1, not written yet" disabled></button>
+        <button type="button" class="para-pip" id="pip2" aria-label="Paragraph 2, not written yet" disabled></button>
+        <button type="button" class="para-pip" id="pip3" aria-label="Paragraph 3, not written yet" disabled></button>
       </div>
-      <div class="pip-hint" id="pip-hint">click a bar to replay that paragraph's sound</div>
+      <div class="pip-hint" id="pip-hint">tap a bar to replay that paragraph's sound</div>
     </div>
   </div>
 
-  <div class="mood-row">
+  <div class="mood-row" role="status" aria-live="polite">
     <div class="analyzing-text" id="analyzing-text">analyzing mood...</div>
     <div class="mood-badge" id="mood-badge"></div>
     <div class="mood-params" id="mood-params"></div>
   </div>
 
-  <div class="notif" id="notif">
-    <div class="notif-dot"></div>
+  <div class="notif" id="notif" role="status" aria-live="polite">
+    <div class="notif-dot" aria-hidden="true"></div>
     <span id="notif-text">waiting for your first paragraph...</span>
-    <div class="waveform">
+    <div class="waveform" aria-hidden="true">
       <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
       <div class="wave-bar"></div><div class="wave-bar"></div>
     </div>
   </div>
 
   <div class="controls-row">
-    <button class="settings-toggle" id="settings-toggle">
-      <span class="arrow">▶</span> music settings
+    <button class="settings-toggle" id="settings-toggle" aria-expanded="false" aria-controls="settings-panel">
+      <span class="arrow" aria-hidden="true">▶</span> music settings
     </button>
   </div>
 
@@ -91,7 +99,7 @@
 
     <div class="override-row">
       <label class="toggle-wrap">
-        <input type="checkbox" id="manual-override-toggle"/>
+        <input type="checkbox" id="manual-override-toggle" aria-label="Override mood detection and pick the mood yourself"/>
         <div class="toggle-track"></div>
         <div class="toggle-thumb"></div>
       </label>
@@ -107,9 +115,9 @@
     <div class="setting-group">
       <div class="setting-label">tempo offset (bpm)</div>
       <div class="setting-row">
-        <span style="font-size:11px;color:var(--muted)">−50</span>
-        <input type="range" id="tempo-offset" min="-50" max="50" value="0" step="5"/>
-        <span style="font-size:11px;color:var(--muted)">+50</span>
+        <span class="range-edge">−50</span>
+        <input type="range" id="tempo-offset" aria-label="Tempo offset in beats per minute" min="-50" max="50" value="0" step="5"/>
+        <span class="range-edge">+50</span>
         <span class="range-val" id="tempo-val">0</span>
       </div>
     </div>
@@ -117,7 +125,7 @@
     <div class="setting-group">
       <div class="setting-label">volume</div>
       <div class="setting-row">
-        <input type="range" id="volume" min="0" max="100" value="75" step="5"/>
+        <input type="range" id="volume" aria-label="Volume" min="0" max="100" value="75" step="5"/>
         <span class="range-val" id="volume-val">75%</span>
       </div>
     </div>
@@ -140,7 +148,7 @@
 
     <div class="setting-group">
       <div class="setting-label">key preference</div>
-      <select id="key-pref">
+      <select id="key-pref" aria-label="Key preference">
         <option value="circle" selected>circle of fifths</option>
         <option value="auto">auto (from mood)</option>
         <option value="C">C major / A minor</option>
@@ -153,7 +161,7 @@
 
     <div class="setting-group">
       <div class="setting-label">texture / voice</div>
-      <select id="texture-pref">
+      <select id="texture-pref" aria-label="Texture or voice">
         <option value="auto">auto (from mood)</option>
         <option value="sparse">sparse — minimal notes</option>
         <option value="rich">rich — full chords + pad</option>
@@ -168,7 +176,7 @@
         <button type="button" class="cof-dir" data-dir="-1">↺ counter-clockwise — settles home, each step down a fifth</button>
       </div>
       <button type="button" class="reset-btn finish-btn cof-preview" id="cof-preview" disabled>▶ hear your path · 5 sec</button>
-      <div class="circle-legend" id="circle-legend"></div>
+      <div class="circle-legend" id="circle-legend" aria-live="polite"></div>
     </div>
 
     <details class="api-key-row ai-mood">
@@ -196,7 +204,7 @@
 
   </div>
 
-  <div class="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice to hear your frequency and start a new paragraph.</div>
+  <div class="enter-hint" id="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice to hear your frequency and start a new paragraph.</div>
   <input class="entry-title" id="entry-title" type="text" maxlength="80" autocomplete="off"
     placeholder="Name this entry (optional)" aria-label="Entry name">
   <div class="voice-row">
@@ -204,7 +212,7 @@
     <p class="voice-status" id="voice-status" role="status" aria-live="polite" hidden></p>
   </div>
   <div class="editor-wrap">
-    <textarea id="writer"
+    <textarea id="writer" aria-label="Your writing" aria-describedby="enter-hint"
       placeholder="Write a paragraph here, then press Enter (return) twice..."
       spellcheck="true" autocomplete="off"
     ></textarea>
@@ -282,7 +290,7 @@
     <span>github.com/bri-an-pmp/the-morning-frequency</span>
   </footer>
 
-</div>
+</main>
 
 <aside class="calendar-panel drawer drawer-right" id="calendar-panel" aria-label="Calendar">
   <div class="theme-picker">
