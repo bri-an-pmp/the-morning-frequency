@@ -45,8 +45,25 @@ export const ROOT_FREQ = { C:261.63, Db:277.18, D:293.66, Eb:311.13, E:329.63, F
 // ─── Mood analysis ────────────────────────────────────────────────────────────
 // Returns { mood, energy, valence, reason }. If Claude can't be used, falls back to word
 // matching and adds apiError (a short, plain-language reason) so the page can say so.
+// Safety cap on paid Claude calls: normal use is about 3 a day, so 60 leaves plenty of room
+// but means a bug, a stuck key or misuse can never run up a large bill on the writer's key.
+export const DAILY_CLAUDE_LIMIT = 60;
+function claudeCallAllowed() {
+  const today = new Date().toDateString();
+  try {
+    const saved = JSON.parse(localStorage.getItem('tmf_claude_calls') || '{}');
+    const n = saved.day === today ? (saved.n | 0) : 0;
+    if (n >= DAILY_CLAUDE_LIMIT) return false;
+    localStorage.setItem('tmf_claude_calls', JSON.stringify({ day: today, n: n + 1 }));
+  } catch (e) { /* storage unavailable: allow, the other limits still apply */ }
+  return true;
+}
+
 export async function analyzeMood(text, apiKey) {
   if (!apiKey) return heuristicMood(text);
+  if (!claudeCallAllowed()) {
+    return { ...heuristicMood(text), apiError: `today's safety limit of ${DAILY_CLAUDE_LIMIT} Claude checks was reached; it resets tomorrow` };
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
