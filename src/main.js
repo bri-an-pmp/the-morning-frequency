@@ -4,6 +4,14 @@ import '@fontsource/dm-mono/300.css';
 import '@fontsource/dm-mono/400.css';
 import '@fontsource/nunito/400.css';
 import '@fontsource/nunito/600.css';
+// Font choices: free look-alikes of Claude's fonts, plus an easy-read font for low vision.
+// (@font-face files only download when a font is actually used.)
+import '@fontsource/source-serif-4/400.css';
+import '@fontsource/source-serif-4/600.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
 import './styles.css';
 import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeKey } from './moods.js';
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS, updateFx } from './audio.js';
@@ -288,6 +296,16 @@ function setTextSize(ts) {
   try { localStorage.setItem('tmf_text_size', ts); } catch (e) { /* not essential */ }
 }
 document.querySelectorAll('.ts-btn').forEach(b => b.addEventListener('click', () => setTextSize(b.dataset.ts)));
+
+// Font: Claude serif, Claude sans or Easy-read. Tapping the chosen one again goes back to the original.
+function setFont(font) {
+  if (font) document.documentElement.dataset.font = font; else delete document.documentElement.dataset.font;
+  document.querySelectorAll('.font-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.font === font ? 'true' : 'false'));
+  try { if (font) localStorage.setItem('tmf_font', font); else localStorage.removeItem('tmf_font'); } catch (e) { /* not essential */ }
+}
+document.querySelectorAll('.font-btn').forEach(b => b.addEventListener('click', () =>
+  setFont(document.documentElement.dataset.font === b.dataset.font ? null : b.dataset.font)));
+try { const f = localStorage.getItem('tmf_font'); if (['serif', 'sans', 'easy'].includes(f)) setFont(f); } catch (e) { /* default */ }
 try { const ts = localStorage.getItem('tmf_text_size'); if (['1', '1.2', '1.4'].includes(ts)) setTextSize(ts); } catch (e) { /* default */ }
 
 function saveApiKey() {

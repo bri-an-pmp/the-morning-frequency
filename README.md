@@ -42,6 +42,7 @@ index.html is the page layout. The src/ folder holds the app code: main.js (the 
 Built for older writers and people with low vision, and checked against WCAG 2.2 AA with axe-core (no violations on desktop or phone, in every color theme):
 
 - **Text size** buttons (normal, large, extra large) at the top, remembered between visits; browser zoom works too.
+- **Font** choices under them: Claude serif and Claude sans (free look-alikes of Claude's reading and interface fonts: Source Serif 4 and Inter) and Easy-read (Atkinson Hyperlegible, designed by the Braille Institute for low vision). Tap the chosen one again for the original fonts.
 - Strong contrast: text and theme colors are darkened automatically until they're easy to read, and the page follows the device's "increase contrast" setting.
 - Every button, slider and menu has a name for screen readers; music, mood and progress updates are announced; the replay bars are real buttons.
 - A clear focus outline for keyboard users, large tap targets, and no controls that only appear on hover.
