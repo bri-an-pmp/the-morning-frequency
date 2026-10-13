@@ -1,10 +1,12 @@
 // Speak instead of typing. The browser turns speech into text (Safari uses Apple's speech
 // service, Chrome uses Google's); the words go into the writing box. A spoken command, or an
 // optional 5-second pause, works like pressing Enter (return) twice, so the paragraph's music plays.
+import { t, SPEECH_LANG } from './i18n.js';
+
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 // Phrases that end a paragraph. Plain "enter" on its own isn't one ("enter the room" is just speech).
-const NEW_PARAGRAPH = /\b(?:new|next) paragraph\b|\b(?:press|hit) enter(?: twice| two times| 2)?\b|\benter (?:twice|two times|2|enter)\b|\bplay (?:my |the )?music\b|\b(?:nuevo|siguiente) p[aá]rrafo\b|\bpunto y aparte\b/gi;
+const NEW_PARAGRAPH = /\b(?:new|next) paragraph\b|\b(?:press|hit) enter(?: twice| two times| 2)?\b|\benter (?:twice|two times|2|enter)\b|\bplay (?:my |the )?music\b|\b(?:nuevo|siguiente|otro) p[aá]rrafo\b|\bpunto y aparte\b|\b(?:presione|presiona|presioná|dele|dale|dé) enter(?: dos veces)?\b|\benter dos veces\b|\b(?:ponga|pon|poné|toque|toca|tocá) (?:mi |la )?m[uú]sica\b/gi;
 const PAUSE_MS = 5000;
 
 const $ = id => document.getElementById(id);
@@ -20,13 +22,13 @@ function typeInto(writer, text, inputType) {
 
 // Returns true if any words were added
 function insertWords(writer, words) {
-  let t = words.replace(/^[\s.,!?;:]+/, '').trim();
-  if (!t) return false;
+  let phrase = words.replace(/^[\s.,!?;:]+/, '').trim();
+  if (!phrase) return false;
   const before = writer.value.slice(0, writer.selectionStart);
   // Capitalize at the start of a paragraph, and keep a space between phrases
-  if (!before.trim() || /\n\s*$/.test(before)) t = t.charAt(0).toUpperCase() + t.slice(1);
-  if (before && !/\s$/.test(before)) t = ' ' + t;
-  typeInto(writer, t, 'insertText');
+  if (!before.trim() || /\n\s*$/.test(before)) phrase = phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  if (before && !/\s$/.test(before)) phrase = ' ' + phrase;
+  typeInto(writer, phrase, 'insertText');
   return true;
 }
 
@@ -50,15 +52,13 @@ export function initVoice() {
   syncPauseHint();
 
   const listeningTip = () => autoPause.checked
-    ? 'Listening… When you finish a thought, say “new paragraph”, or just pause for 5 seconds, to hear your music.'
-    : 'Listening… When you finish a thought, say “new paragraph” to hear your music.';
+    ? t('voiceTipPause')
+    : t('voiceTip');
 
   if (!Recognition) {
     // No built-in listening here: the phone keyboard's microphone works instead, and its
     // "new paragraph" command now plays the music too
-    btn.addEventListener('click', () => say(isApple
-      ? 'Tap the writing box, then tap the microphone key on your keyboard and talk. Say “new paragraph” when you finish a thought, and your music plays.'
-      : 'This browser can’t listen directly. Use the microphone key on your keyboard, and say “new paragraph” when you finish a thought. Or try Chrome or Safari.'));
+    btn.addEventListener('click', () => say(isApple ? t('voiceKeyboardApple') : t('voiceKeyboardOther')));
     autoPause.parentElement.hidden = true;
     pauseHint.hidden = true;
     return;
@@ -69,7 +69,7 @@ export function initVoice() {
   function setButton() {
     btn.classList.toggle('listening', listening);
     btn.setAttribute('aria-pressed', listening ? 'true' : 'false');
-    btn.textContent = listening ? '■ stop listening' : '🎤 speak instead of typing';
+    btn.textContent = listening ? t('voiceStop') : t('voiceStart');
   }
 
   function endParagraph(reason) {
@@ -77,9 +77,7 @@ export function initVoice() {
     if (!wordsSinceBreak) return;   // nothing new said: don't add empty paragraphs
     wordsSinceBreak = false;
     pressEnterTwice(writer);
-    say(reason === 'pause'
-      ? '♪ You paused, so here’s your music. Keep talking for your next paragraph.'
-      : '♪ Got it, here’s your music. Keep talking for your next paragraph.', true);
+    say(reason === 'pause' ? t('voicePaused') : t('voiceGotIt'), true);
   }
 
   function armPauseTimer() {
@@ -97,7 +95,7 @@ export function initVoice() {
 
   function start() {
     rec = new Recognition();
-    rec.lang = navigator.language || 'en-US';
+    rec.lang = SPEECH_LANG;
     rec.continuous = true;
     rec.interimResults = true;
 
@@ -117,23 +115,23 @@ export function initVoice() {
         });
         if (!breaks) say(listeningTip());
       }
-      if (interim) say(`hearing: “${interim.trim()}”`);
+      if (interim) say(t('voiceHeard', { text: interim.trim() }));
       armPauseTimer();
     };
     rec.onerror = e => {
       if (e.error === 'no-speech' || e.error === 'aborted') return;
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        stop('The microphone is turned off for this page. Allow the microphone in your browser or phone settings, then tap the button again.');
+        stop(t('voiceNoMic'));
       } else if (e.error === 'network') {
-        stop('Speaking needs an internet connection. Check your connection and try again.');
+        stop(t('voiceOffline'));
       } else {
-        stop('Listening stopped. Tap the button to try again.');
+        stop(t('voiceStopped'));
       }
     };
     // Browsers stop after a pause; keep listening until the writer taps stop
     rec.onend = () => { if (listening) { try { rec.start(); } catch (e) { stop(); } } };
 
-    try { rec.start(); } catch (e) { stop('Listening couldn’t start. Tap the button to try again.'); return; }
+    try { rec.start(); } catch (e) { stop(t('voiceCantStart')); return; }
     listening = true;
     wordsSinceBreak = false;
     setButton();
@@ -145,7 +143,7 @@ export function initVoice() {
     // Stopping mid-paragraph still plays that paragraph's music
     const unfinished = wordsSinceBreak;
     endParagraph('command');
-    stop(unfinished ? '♪ Here’s the music for your last paragraph. Tap the button to keep talking.' : '');
+    stop(unfinished ? t('voiceLast') : '');
   });
   document.addEventListener('visibilitychange', () => { if (document.hidden && listening) stop(); });
   setButton();

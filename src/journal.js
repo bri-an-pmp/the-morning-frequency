@@ -1,6 +1,7 @@
 // Saved entries (the journal). Uses Capacitor Preferences: native storage in the iPhone app,
 // which iOS won't clear, and localStorage on the website.
 import { Preferences } from '@capacitor/preferences';
+import { t } from './i18n.js';
 
 const KEY = 'tmf_entries';
 
@@ -19,15 +20,15 @@ const validDate = v => typeof v === 'string' && !Number.isNaN(Date.parse(v));
 
 // Saved data is checked before use: anything malformed is repaired or dropped, so a damaged or
 // tampered entry can't crash the page or feed impossible values (like an infinite pitch) to the audio
-function cleanTrack(t) {
-  if (!t || typeof t !== 'object' || !t.moodData || typeof t.moodData !== 'object') return null;
+function cleanTrack(tr) {
+  if (!tr || typeof tr !== 'object' || !tr.moodData || typeof tr.moodData !== 'object') return null;
   const n = v => (Number.isFinite(+v) ? Math.min(1, Math.max(0, +v)) : 0.5);
-  const k = t.key;
+  const k = tr.key;
   const key = k && typeof k === 'object' && Number.isFinite(k.root) && k.root >= 50 && k.root <= 2000
     ? { root: k.root, minor: k.minor === true, name: str(k.name, 4) } : null;
   return {
-    musicIndex: int(t.musicIndex, 0, 3),
-    moodData: { mood: str(t.moodData.mood, 20), energy: n(t.moodData.energy), valence: n(t.moodData.valence), reason: str(t.moodData.reason, 60) },
+    musicIndex: int(tr.musicIndex, 0, 3),
+    moodData: { mood: str(tr.moodData.mood, 20), energy: n(tr.moodData.energy), valence: n(tr.moodData.valence), reason: str(tr.moodData.reason, 60) },
     key,
   };
 }
@@ -100,6 +101,6 @@ export function dayKey(date) {
 export function entryTitle(entry) {
   const named = (entry.title || '').trim();
   if (named) return named.length > 48 ? named.slice(0, 46).trimEnd() + '…' : named;
-  const first = (entry.text || '').split('\n').map(l => l.trim()).find(Boolean) || 'Empty entry';
+  const first = (entry.text || '').split('\n').map(l => l.trim()).find(Boolean) || t('emptyEntry');
   return first.length > 48 ? first.slice(0, 46).trimEnd() + '…' : first;
 }

@@ -1,6 +1,7 @@
 // Builds the Word, PDF and WAV files and shares them
 import { playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import { moodProfile } from './moods.js';
+import { LOCALE } from './i18n.js';
 
 export function sessionParagraphs() {
   return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
@@ -11,7 +12,7 @@ let meta = { date: new Date(), title: '' };
 export function setSessionMeta(m) { meta = { ...meta, ...m }; }
 
 export function sessionDate() {
-  return meta.date.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  return meta.date.toLocaleDateString(LOCALE,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
 
 // The entry's name, or its first line when the writer hasn't named it

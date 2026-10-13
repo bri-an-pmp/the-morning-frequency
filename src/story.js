@@ -4,6 +4,7 @@
 import { ctx } from './audio.js';
 import { renderTrack } from './export.js';
 import { describeKey } from './moods.js';
+import { t, moodName } from './i18n.js';
 
 const W = 1080, H = 1920, FPS = 30;
 const SEG = 5;          // seconds each paragraph leads before the next one comes in
@@ -118,7 +119,7 @@ function drawBackground(g, { date, line }) {
 
   g.fillStyle = '#4b6482';
   g.font = `400 30px ${MONO}`;
-  g.fillText('write yours →', W / 2, 1640);
+  g.fillText(t('storyCta'), W / 2, 1640);
   g.fillText(APP_URL, W / 2, 1685);
 }
 
@@ -177,7 +178,7 @@ function makeFrameDrawer(g, opts) {
     g.textAlign = 'center';
     g.fillStyle = color;
     g.font = `400 72px ${SERIF}`;
-    g.fillText(profile.label, cx, cy + 12);
+    g.fillText(moodName(profile.label), cx, cy + 12);
     g.fillStyle = '#4b6482';
     g.font = `400 28px ${MONO}`;
     g.fillText(describeKey(profile, key), cx, cy + 62);

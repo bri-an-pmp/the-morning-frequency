@@ -17,10 +17,10 @@
 </div>
 <div class="layout">
 
-<aside class="history drawer drawer-left" id="history" aria-label="Your entries">
+<aside class="history drawer drawer-left" id="history" aria-label="Your entries" data-i18n-attr="aria-label=entriesTitle">
   <div class="history-head">
-    <span class="panel-title">Your entries</span>
-    <button class="new-entry-btn" id="new-entry-btn" type="button">+ new entry</button>
+    <span class="panel-title" data-i18n="entriesTitle">Your entries</span>
+    <button class="new-entry-btn" id="new-entry-btn" type="button" data-i18n="newEntryTop">+ new entry</button>
   </div>
   <nav class="history-list" id="history-list"></nav>
 </aside>
@@ -28,10 +28,10 @@
 <main class="container" id="main">
 
   <div class="topbar">
-    <button class="icon-btn" id="open-history" type="button" aria-label="Show your entries" aria-controls="history">
+    <button class="icon-btn" id="open-history" type="button" aria-label="Show your entries" data-i18n-attr="aria-label=showEntries" aria-controls="history">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
-    <button class="icon-btn" id="open-calendar" type="button" aria-label="Show calendar" aria-controls="calendar-panel">
+    <button class="icon-btn" id="open-calendar" type="button" aria-label="Show calendar" data-i18n-attr="aria-label=showCalendar" aria-controls="calendar-panel">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </div>
@@ -40,22 +40,27 @@
     <h1 class="logo">the morning <em>frequency</em></h1>
     <div class="header-right">
       <div class="date-stamp" id="date-stamp"></div>
-      <div class="text-size" role="group" aria-label="Text size">
-        <span class="text-size-label" aria-hidden="true">text size</span>
-        <button type="button" class="ts-btn" data-ts="1" aria-label="Normal text" aria-pressed="true">A</button>
-        <button type="button" class="ts-btn ts-lg" data-ts="1.2" aria-label="Large text" aria-pressed="false">A</button>
-        <button type="button" class="ts-btn ts-xl" data-ts="1.4" aria-label="Extra large text" aria-pressed="false">A</button>
+      <div class="text-size" role="group" aria-label="Text size" data-i18n-attr="aria-label=textSize">
+        <span class="text-size-label" aria-hidden="true" data-i18n="textSizeLabel">text size</span>
+        <button type="button" class="ts-btn" data-ts="1" aria-label="Normal text" data-i18n-attr="aria-label=tsNormal" aria-pressed="true">A</button>
+        <button type="button" class="ts-btn ts-lg" data-ts="1.2" aria-label="Large text" data-i18n-attr="aria-label=tsLarge" aria-pressed="false">A</button>
+        <button type="button" class="ts-btn ts-xl" data-ts="1.4" aria-label="Extra large text" data-i18n-attr="aria-label=tsXL" aria-pressed="false">A</button>
       </div>
-      <div class="font-choice" role="group" aria-label="Font">
-        <span class="text-size-label" aria-hidden="true">font</span>
-        <button type="button" class="font-btn" data-font="serif" aria-pressed="false" title="Like Claude's reading font (Source Serif 4)">Claude serif</button>
-        <button type="button" class="font-btn" data-font="sans" aria-pressed="false" title="Like Claude's interface font (Inter)">Claude sans</button>
-        <button type="button" class="font-btn" data-font="easy" aria-pressed="false" title="Atkinson Hyperlegible, designed for low vision">Easy-read</button>
+      <div class="font-choice" role="group" aria-label="Font" data-i18n-attr="aria-label=font">
+        <span class="text-size-label" aria-hidden="true" data-i18n="fontLabel">font</span>
+        <button type="button" class="font-btn" data-font="serif" aria-pressed="false" title="Like Claude's reading font (Source Serif 4)" data-i18n-attr="title=fontSerifTitle">Claude serif</button>
+        <button type="button" class="font-btn" data-font="sans" aria-pressed="false" title="Like Claude's interface font (Inter)" data-i18n-attr="title=fontSansTitle">Claude sans</button>
+        <button type="button" class="font-btn" data-font="easy" aria-pressed="false" title="Atkinson Hyperlegible, designed for low vision" data-i18n-attr="title=fontEasyTitle"><span data-i18n="fontEasy">Easy-read</span></button>
+      </div>
+      <div class="lang-choice" role="group" aria-label="Language / Idioma">
+        <span class="text-size-label" aria-hidden="true" data-i18n="langLabel">language</span>
+        <button type="button" class="lang-btn" data-lang="en" lang="en" aria-pressed="false">English</button>
+        <button type="button" class="lang-btn" data-lang="es" lang="es" aria-pressed="false">Español</button>
       </div>
     </div>
   </header>
 
-  <p class="how-to">Turn your sound on and type a paragraph below — any length, even one word. <strong>Press Enter (return) twice to hear your frequency and start a new paragraph.</strong> Once you've finished 3 paragraphs, tap <strong>Finish Session</strong> below to save your writing and music.</p>
+  <p class="how-to" data-i18n-html="howTo">Turn your sound on and type a paragraph below — any length, even one word. <strong>Press Enter (return) twice to hear your frequency and start a new paragraph.</strong> Once you've finished 3 paragraphs, tap <strong>Finish Session</strong> below to save your writing and music.</p>
 
   <div class="progress-section">
     <div class="ring-wrap">
@@ -63,32 +68,32 @@
         <circle class="ring-bg" cx="44" cy="44" r="36"/>
         <circle class="ring-fill" id="ring" cx="44" cy="44" r="36"/>
       </svg>
-      <div class="ring-count" role="img" aria-live="polite" id="ring-count" aria-label="0 of 3 paragraphs written">
+      <div class="ring-count" role="img" aria-live="polite" id="ring-count" aria-label="0 of 3 paragraphs written" data-i18n-attr="aria-label=ringStart">
         <span id="count-num">0</span>
-        <span class="ring-label">of 3</span>
+        <span class="ring-label" data-i18n="ringOf">of 3</span>
       </div>
     </div>
     <div class="progress-info">
-      <div class="progress-title" id="progress-title">Start writing.</div>
-      <div class="progress-sub" id="progress-sub">Each paragraph unlocks music tuned to what you wrote. Finish 3 for your morning frequency.</div>
+      <div class="progress-title" id="progress-title" data-i18n="progressTitle">Start writing.</div>
+      <div class="progress-sub" id="progress-sub" data-i18n="progressSub">Each paragraph unlocks music tuned to what you wrote. Finish 3 for your morning frequency.</div>
       <div class="para-indicators">
-        <button type="button" class="para-pip" id="pip1" aria-label="Paragraph 1, not written yet" disabled></button>
-        <button type="button" class="para-pip" id="pip2" aria-label="Paragraph 2, not written yet" disabled></button>
-        <button type="button" class="para-pip" id="pip3" aria-label="Paragraph 3, not written yet" disabled></button>
+        <button type="button" class="para-pip" id="pip1" aria-label="Paragraph 1, not written yet" data-i18n-attr="aria-label=pip1" disabled></button>
+        <button type="button" class="para-pip" id="pip2" aria-label="Paragraph 2, not written yet" data-i18n-attr="aria-label=pip2" disabled></button>
+        <button type="button" class="para-pip" id="pip3" aria-label="Paragraph 3, not written yet" data-i18n-attr="aria-label=pip3" disabled></button>
       </div>
-      <div class="pip-hint" id="pip-hint">tap a bar to replay that paragraph's sound</div>
+      <div class="pip-hint" id="pip-hint" data-i18n="pipHint">tap a bar to replay that paragraph's sound</div>
     </div>
   </div>
 
   <div class="mood-row" role="status" aria-live="polite">
-    <div class="analyzing-text" id="analyzing-text">analyzing mood...</div>
+    <div class="analyzing-text" id="analyzing-text" data-i18n="analyzing">analyzing mood...</div>
     <div class="mood-badge" id="mood-badge"></div>
     <div class="mood-params" id="mood-params"></div>
   </div>
 
   <div class="notif" id="notif" role="status" aria-live="polite">
     <div class="notif-dot" aria-hidden="true"></div>
-    <span id="notif-text">waiting for your first paragraph...</span>
+    <span id="notif-text" data-i18n="waiting">waiting for your first paragraph...</span>
     <div class="waveform" aria-hidden="true">
       <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
       <div class="wave-bar"></div><div class="wave-bar"></div>
@@ -97,7 +102,7 @@
 
   <div class="controls-row">
     <button class="settings-toggle" id="settings-toggle" aria-expanded="false" aria-controls="settings-panel">
-      <span class="arrow" aria-hidden="true">▶</span> music settings
+      <span class="arrow" aria-hidden="true">▶</span> <span data-i18n="musicSettings">music settings</span>
     </button>
   </div>
 
@@ -105,122 +110,122 @@
 
     <div class="override-row">
       <label class="toggle-wrap">
-        <input type="checkbox" id="manual-override-toggle" aria-label="Override mood detection and pick the mood yourself"/>
+        <input type="checkbox" id="manual-override-toggle" aria-label="Override mood detection and pick the mood yourself" data-i18n-attr="aria-label=overrideAria"/>
         <div class="toggle-track"></div>
         <div class="toggle-thumb"></div>
       </label>
-      <span>override mood detection — pick manually</span>
+      <span data-i18n="override">override mood detection — pick manually</span>
     </div>
 
     <div class="manual-mood-wrap" id="manual-mood-wrap">
-      <div class="setting-label">select mood</div>
+      <div class="setting-label" data-i18n="selectMood">select mood</div>
       <div class="mood-buttons"><!-- filled in from the mood list in moods.js -->
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">tempo offset (bpm)</div>
+      <div class="setting-label" data-i18n="tempo">tempo offset (bpm)</div>
       <div class="setting-row">
         <span class="range-edge">−50</span>
-        <input type="range" id="tempo-offset" aria-label="Tempo offset in beats per minute" min="-50" max="50" value="0" step="5"/>
+        <input type="range" id="tempo-offset" aria-label="Tempo offset in beats per minute" data-i18n-attr="aria-label=tempoAria" min="-50" max="50" value="0" step="5"/>
         <span class="range-edge">+50</span>
         <span class="range-val" id="tempo-val">0</span>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">volume</div>
+      <div class="setting-label" data-i18n="volume">volume</div>
       <div class="setting-row">
-        <input type="range" id="volume" aria-label="Volume" min="0" max="100" value="75" step="5"/>
+        <input type="range" id="volume" aria-label="Volume" data-i18n-attr="aria-label=volumeAria" min="0" max="100" value="75" step="5"/>
         <span class="range-val" id="volume-val">75%</span>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">reverb — cathedral space</div>
+      <div class="setting-label" data-i18n="reverb">reverb — cathedral space</div>
       <div class="setting-row">
-        <input type="range" id="reverb-amt" min="0" max="200" value="100" step="5" aria-label="Reverb amount"/>
+        <input type="range" id="reverb-amt" min="0" max="200" value="100" step="5" aria-label="Reverb amount" data-i18n-attr="aria-label=reverbAria"/>
         <span class="range-val" id="reverb-amt-val">100%</span>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">delay — echoes</div>
+      <div class="setting-label" data-i18n="delay">delay — echoes</div>
       <div class="setting-row">
-        <input type="range" id="delay-amt" min="0" max="200" value="100" step="5" aria-label="Delay amount"/>
+        <input type="range" id="delay-amt" min="0" max="200" value="100" step="5" aria-label="Delay amount" data-i18n-attr="aria-label=delayAria"/>
         <span class="range-val" id="delay-amt-val">100%</span>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">key preference</div>
-      <select id="key-pref" aria-label="Key preference">
-        <option value="circle" selected>circle of fifths</option>
-        <option value="auto">auto (from mood)</option>
-        <option value="C">C major / A minor</option>
-        <option value="G">G major / E minor</option>
-        <option value="D">D major / B minor</option>
-        <option value="F">F major / D minor</option>
-        <option value="Bb">Bb major / G minor</option>
+      <div class="setting-label" data-i18n="keyPref">key preference</div>
+      <select id="key-pref" aria-label="Key preference" data-i18n-attr="aria-label=keyPrefAria">
+        <option value="circle" selected data-i18n="optCircle">circle of fifths</option>
+        <option value="auto" data-i18n="optAuto">auto (from mood)</option>
+        <option value="C" data-i18n="optC">C major / A minor</option>
+        <option value="G" data-i18n="optG">G major / E minor</option>
+        <option value="D" data-i18n="optD">D major / B minor</option>
+        <option value="F" data-i18n="optF">F major / D minor</option>
+        <option value="Bb" data-i18n="optBb">Bb major / G minor</option>
       </select>
     </div>
 
     <div class="setting-group">
-      <div class="setting-label">texture / voice</div>
-      <select id="texture-pref" aria-label="Texture or voice">
-        <option value="auto">auto (from mood)</option>
-        <option value="sparse">sparse — minimal notes</option>
-        <option value="rich">rich — full chords + pad</option>
-        <option value="melodic">melodic — phrase-first</option>
-        <option value="rhythmic">rhythmic — pulse-driven</option>
+      <div class="setting-label" data-i18n="texture">texture / voice</div>
+      <select id="texture-pref" aria-label="Texture or voice" data-i18n-attr="aria-label=textureAria">
+        <option value="auto" data-i18n="optTexAuto">auto (from mood)</option>
+        <option value="sparse" data-i18n="optSparse">sparse — minimal notes</option>
+        <option value="rich" data-i18n="optRich">rich — full chords + pad</option>
+        <option value="melodic" data-i18n="optMelodic">melodic — phrase-first</option>
+        <option value="rhythmic" data-i18n="optRhythmic">rhythmic — pulse-driven</option>
       </select>
     </div>
 
     <div class="circle-wrap" id="circle-wrap">
-      <div class="cof-dirs" role="group" aria-label="Direction around the circle">
-        <button type="button" class="cof-dir" data-dir="1">↻ clockwise — brighter, each step up a fifth</button>
-        <button type="button" class="cof-dir" data-dir="-1">↺ counter-clockwise — settles home, each step down a fifth</button>
+      <div class="cof-dirs" role="group" aria-label="Direction around the circle" data-i18n-attr="aria-label=cofDirAria">
+        <button type="button" class="cof-dir" data-dir="1" data-i18n="cofCW">↻ clockwise — brighter, each step up a fifth</button>
+        <button type="button" class="cof-dir" data-dir="-1" data-i18n="cofCCW">↺ counter-clockwise — settles home, each step down a fifth</button>
       </div>
-      <button type="button" class="reset-btn finish-btn cof-preview" id="cof-preview" disabled>▶ hear your path · 5 sec</button>
+      <button type="button" class="reset-btn finish-btn cof-preview" id="cof-preview" disabled data-i18n="cofPreview">▶ hear your path · 5 sec</button>
       <div class="circle-legend" id="circle-legend" aria-live="polite"></div>
     </div>
 
     <details class="api-key-row ai-mood">
-      <summary>Smarter mood matching with Claude AI <span class="optional">optional</span></summary>
+      <summary><span data-i18n="aiSummary">Smarter mood matching with Claude AI</span> <span class="optional" data-i18n="optional">optional</span></summary>
       <div class="ai-mood-body">
-        <p><strong>What it does:</strong> on its own, the app guesses your mood from certain words like “happy” or “worried”, so writing without those words often gets a generic mood. With a Claude key, Claude AI reads your whole paragraph, so the music matches what you actually mean.</p>
-        <p><strong>What it costs:</strong> about a fifth of a cent per morning, paid to Anthropic (the company that makes Claude), not to us. Anthropic asks for $5 of credit to start, which covers years of daily writing.</p>
-        <p><strong>How to set it up</strong> (about 5 minutes):</p>
+        <p data-i18n-html="aiWhat"><strong>What it does:</strong> on its own, the app guesses your mood from certain words like “happy” or “worried”, so writing without those words often gets a generic mood. With a Claude key, Claude AI reads your whole paragraph, so the music matches what you actually mean.</p>
+        <p data-i18n-html="aiCost"><strong>What it costs:</strong> about a fifth of a cent per morning, paid to Anthropic (the company that makes Claude), not to us. Anthropic asks for $5 of credit to start, which covers years of daily writing.</p>
+        <p data-i18n-html="aiHow"><strong>How to set it up</strong> (about 5 minutes):</p>
         <ol>
-          <li>Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> and create an account.</li>
-          <li>Open <strong>Billing</strong> and add $5 of credit. Then, under <strong>Settings → Limits</strong>, set a monthly spend limit (for example $5), so a lost or stolen key can never cost you more than that.</li>
-          <li>Open <strong>API Keys</strong>, click <strong>Create Key</strong>, and copy it (it starts with <code>sk-ant-</code>).</li>
-          <li>Paste it below and tap <strong>save</strong>.</li>
+          <li data-i18n-html="aiStep1">Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> and create an account.</li>
+          <li data-i18n-html="aiStep2">Open <strong>Billing</strong> and add $5 of credit. Then, under <strong>Settings → Limits</strong>, set a monthly spend limit (for example $5), so a lost or stolen key can never cost you more than that.</li>
+          <li data-i18n-html="aiStep3">Open <strong>API Keys</strong>, click <strong>Create Key</strong>, and copy it (it starts with <code>sk-ant-</code>).</li>
+          <li data-i18n-html="aiStep4">Paste it below and tap <strong>save</strong>.</li>
         </ol>
-        <div class="setting-label">your Claude key</div>
+        <div class="setting-label" data-i18n="yourKey">your Claude key</div>
         <div class="api-key-input-wrap">
-          <input type="password" id="api-key-input" placeholder="paste your key (sk-ant-...)" autocomplete="off" aria-label="Your Claude API key"/>
-          <button class="save-key-btn" id="save-key-btn">save</button>
-          <button class="save-key-btn" id="remove-key-btn" hidden>remove</button>
+          <input type="password" id="api-key-input" placeholder="paste your key (sk-ant-...)" autocomplete="off" aria-label="Your Claude API key" data-i18n-attr="placeholder=keyPlaceholder;aria-label=keyAria"/>
+          <button class="save-key-btn" id="save-key-btn" data-i18n="save">save</button>
+          <button class="save-key-btn" id="remove-key-btn" hidden data-i18n="remove">remove</button>
         </div>
-        <div class="key-status" id="key-status">Not set — using word matching.</div>
-        <p class="ai-mood-privacy">Your key is saved only on this device, and the app never uses it more than 60 times a day. Use a key made just for this app, never one you use elsewhere. With a key, each paragraph is sent to Anthropic to read its mood. Without one, your writing never leaves your device.</p>
+        <div class="key-status" id="key-status" data-i18n="keyNotSet">Not set — using word matching.</div>
+        <p class="ai-mood-privacy" data-i18n="aiPrivacy">Your key is saved only on this device, and the app never uses it more than 60 times a day. Use a key made just for this app, never one you use elsewhere. With a key, each paragraph is sent to Anthropic to read its mood. Without one, your writing never leaves your device.</p>
       </div>
     </details>
 
   </div>
 
-  <div class="enter-hint" id="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice, or say “new paragraph”, to hear your frequency and start a new paragraph.</div>
+  <div class="enter-hint" id="enter-hint" data-i18n-html="enterHint">↵ ↵ &nbsp;Press Enter (return) twice, or say “new paragraph”, to hear your frequency and start a new paragraph.</div>
   <input class="entry-title" id="entry-title" type="text" maxlength="80" autocomplete="off"
-    placeholder="Name this entry (optional)" aria-label="Entry name">
+    placeholder="Name this entry (optional)" aria-label="Entry name" data-i18n-attr="placeholder=entryName;aria-label=entryNameAria">
   <div class="voice-row">
     <button type="button" class="voice-btn" id="voice-btn" aria-pressed="false" aria-describedby="voice-help">🎤 speak instead of typing</button>
-    <p class="voice-help" id="voice-help">Tap, then talk. When you finish a thought, say <strong>“new paragraph”</strong> to hear your music<span id="voice-help-pause"> — or just pause for 5 seconds</span>.</p>
-    <label class="voice-option"><input type="checkbox" id="voice-autopause" checked> Play my music when I pause for 5 seconds</label>
+    <p class="voice-help" id="voice-help" data-i18n-html="voiceHelp">Tap, then talk. When you finish a thought, say <strong>“new paragraph”</strong> to hear your music<span id="voice-help-pause"> — or just pause for 5 seconds</span>.</p>
+    <label class="voice-option"><input type="checkbox" id="voice-autopause" checked> <span data-i18n="voiceAutopause">Play my music when I pause for 5 seconds</span></label>
     <p class="voice-status" id="voice-status" role="status" aria-live="polite" hidden></p>
   </div>
   <div class="editor-wrap">
-    <textarea id="writer" aria-label="Your writing" aria-describedby="enter-hint"
+    <textarea id="writer" aria-label="Your writing" aria-describedby="enter-hint" data-i18n-attr="aria-label=writingAria;placeholder=writingPlaceholder"
       placeholder="Write a paragraph here, then press Enter (return) twice..."
       spellcheck="true" autocomplete="off"
     ></textarea>
@@ -231,61 +236,61 @@
   </div>
 
   <div class="meta-row">
-    <span id="word-count">0 words</span>
-    <span id="para-count-meta">0 paragraphs detected</span>
+    <span id="word-count" data-i18n="words0">0 words</span>
+    <span id="para-count-meta" data-i18n="paras0">0 paragraphs detected</span>
   </div>
 
-  <div class="streak-panel" id="streak-panel" role="region" aria-label="Streak reward">
-    <button class="streak-close" id="streak-close" type="button" aria-label="Close">×</button>
+  <div class="streak-panel" id="streak-panel" role="region" aria-label="Streak reward" data-i18n-attr="aria-label=streakAria">
+    <button class="streak-close" id="streak-close" type="button" aria-label="Close" data-i18n-attr="aria-label=close">×</button>
     <div class="streak-title" id="streak-title"></div>
     <div class="streak-sub" id="streak-sub"></div>
     <div class="finish-buttons">
-      <button class="reset-btn finish-btn" id="streak-play">play streak mix</button>
-      <button class="reset-btn" id="streak-download">download (.wav)</button>
-      <button class="reset-btn share-btn" id="streak-share">save to cloud / share</button>
+      <button class="reset-btn finish-btn" id="streak-play" data-i18n="streakPlay">play streak mix</button>
+      <button class="reset-btn" id="streak-download" data-i18n="downloadWavShort">download (.wav)</button>
+      <button class="reset-btn share-btn" id="streak-share" data-i18n="shareCloud">save to cloud / share</button>
     </div>
   </div>
 
   <div class="goal-banner" id="goal-banner">
-    <div class="goal-banner-title">Morning frequency complete.</div>
-    <div class="goal-banner-sub">3 paragraphs written. Keep going or come back tomorrow.</div>
+    <div class="goal-banner-title" data-i18n="goalTitle">Morning frequency complete.</div>
+    <div class="goal-banner-sub" data-i18n="goalSub">3 paragraphs written. Keep going or come back tomorrow.</div>
   </div>
 
   <div class="session-actions">
-    <button class="reset-btn clear-btn" id="clear-btn" title="Erase this entry's writing, name and music and start with a clean slate">reset</button>
-    <button class="reset-btn" id="new-entry-bottom" title="Keep this entry in your history and start a new one">new entry</button>
-    <button class="reset-btn finish-btn" id="finish-btn">finish session</button>
+    <button class="reset-btn clear-btn" id="clear-btn" title="Erase this entry's writing, name and music and start with a clean slate" data-i18n-attr="title=resetTitle" data-i18n="reset">reset</button>
+    <button class="reset-btn" id="new-entry-bottom" title="Keep this entry in your history and start a new one" data-i18n-attr="title=newEntryTitle" data-i18n="newEntry">new entry</button>
+    <button class="reset-btn finish-btn" id="finish-btn" data-i18n="finish">finish session</button>
   </div>
 
   <div class="finish-panel" id="finish-panel">
-    <div class="finish-title">Session finished.</div>
-    <div class="finish-sub" id="finish-sub">Download your writing and music, or save them to the cloud.</div>
-    <div class="finish-row-label">your writing</div>
+    <div class="finish-title" data-i18n="finishTitle">Session finished.</div>
+    <div class="finish-sub" id="finish-sub" data-i18n="finishSub">Download your writing and music, or save them to the cloud.</div>
+    <div class="finish-row-label" data-i18n="yourWriting">your writing</div>
     <div class="finish-buttons">
-      <button class="reset-btn" id="download-docx">download word (.docx)</button>
-      <button class="reset-btn" id="download-pdf">download pdf</button>
-      <button class="reset-btn share-btn" id="share-writing">save to cloud / share</button>
-      <button class="reset-btn" id="save-notes">save to Apple Notes</button>
+      <button class="reset-btn" id="download-docx" data-i18n="downloadDocx">download word (.docx)</button>
+      <button class="reset-btn" id="download-pdf" data-i18n="downloadPdf">download pdf</button>
+      <button class="reset-btn share-btn" id="share-writing" data-i18n="shareCloud">save to cloud / share</button>
+      <button class="reset-btn" id="save-notes" data-i18n="saveNotes">save to Apple Notes</button>
     </div>
     <p class="finish-note notes-help" id="notes-help" role="status" aria-live="polite"></p>
-    <div class="finish-row-label">your music</div>
+    <div class="finish-row-label" data-i18n="yourMusic">your music</div>
     <div class="finish-buttons">
-      <button class="reset-btn" id="download-wav">download audio (.wav)</button>
-      <button class="reset-btn share-btn" id="share-music">save to cloud / share</button>
+      <button class="reset-btn" id="download-wav" data-i18n="downloadWav">download audio (.wav)</button>
+      <button class="reset-btn share-btn" id="share-music" data-i18n="shareCloud">save to cloud / share</button>
     </div>
     <div class="story-section" id="story-section">
-      <div class="finish-row-label">your story</div>
-      <div class="story-sub">A short video of your music for Instagram, TikTok or Facebook stories. Your writing stays private unless you add a line.</div>
-      <input class="story-line" id="story-line" type="text" maxlength="140" placeholder="add a line from your writing (optional)" aria-label="Optional line to show in your story video">
+      <div class="finish-row-label" data-i18n="yourStory">your story</div>
+      <div class="story-sub" data-i18n="storySub">A short video of your music for Instagram, TikTok or Facebook stories. Your writing stays private unless you add a line.</div>
+      <input class="story-line" id="story-line" type="text" maxlength="140" placeholder="add a line from your writing (optional)" aria-label="Optional line to show in your story video" data-i18n-attr="placeholder=storyLine;aria-label=storyLineAria">
       <div class="finish-buttons">
-        <button class="reset-btn finish-btn" id="make-story">make story video</button>
+        <button class="reset-btn finish-btn" id="make-story" data-i18n="makeStory">make story video</button>
       </div>
       <div class="story-result" id="story-result">
         <video class="story-preview" id="story-preview" controls playsinline></video>
-        <img class="story-preview" id="story-image" alt="Your story picture">
+        <img class="story-preview" id="story-image" alt="Your story picture" data-i18n-attr="alt=storyImage">
         <div class="finish-buttons">
-          <button class="reset-btn finish-btn" id="share-story">share to story</button>
-          <button class="reset-btn" id="download-story">download video</button>
+          <button class="reset-btn finish-btn" id="share-story" data-i18n="shareStory">share to story</button>
+          <button class="reset-btn" id="download-story" data-i18n="downloadVideo">download video</button>
         </div>
         <div class="finish-note" id="story-note"></div>
       </div>
@@ -300,13 +305,13 @@
 
 </main>
 
-<aside class="calendar-panel drawer drawer-right" id="calendar-panel" aria-label="Calendar">
+<aside class="calendar-panel drawer drawer-right" id="calendar-panel" aria-label="Calendar" data-i18n-attr="aria-label=calendarAria">
   <div class="theme-picker">
-    <div class="panel-title">Theme</div>
-    <div class="theme-swatches" id="theme-swatches" role="group" aria-label="Color theme"></div>
+    <div class="panel-title" data-i18n="theme">Theme</div>
+    <div class="theme-swatches" id="theme-swatches" role="group" aria-label="Color theme" data-i18n-attr="aria-label=theme"></div>
     <div class="theme-name" id="theme-name"></div>
   </div>
-  <div class="panel-title">Calendar</div>
+  <div class="panel-title" data-i18n="calendar">Calendar</div>
   <div id="calendar"></div>
 </aside>
 

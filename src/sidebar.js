@@ -2,6 +2,7 @@
 import { moodProfile } from './moods.js';
 import { dayKey, entryTitle } from './journal.js';
 import { STREAK_MILESTONES } from './audio.js';
+import { t, tn, LOCALE } from './i18n.js';
 
 const DAY_MS = 86400000;
 
@@ -9,11 +10,11 @@ function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x
 
 function groupLabel(createdAt, now = new Date()) {
   const days = Math.round((startOfDay(now) - startOfDay(createdAt)) / DAY_MS);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return 'Previous 7 days';
-  if (days < 30) return 'Previous 30 days';
-  return new Date(createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  if (days <= 0) return t('today');
+  if (days === 1) return t('yesterday');
+  if (days < 7) return t('prev7');
+  if (days < 30) return t('prev30');
+  return new Date(createdAt).toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' });
 }
 
 function moodColor(entry) {
@@ -32,7 +33,7 @@ function el(tag, cls, text) {
 export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
   listEl.replaceChildren();
   if (!entries.length) {
-    listEl.append(el('p', 'history-empty', 'Your entries will appear here as you write.'));
+    listEl.append(el('p', 'history-empty', t('historyEmpty')));
     return;
   }
   let lastGroup = null;
@@ -48,13 +49,13 @@ export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
     const when = new Date(entry.createdAt);
     const days = Math.round((startOfDay(new Date()) - startOfDay(when)) / DAY_MS);
     meta.append(el('span', null, days < 7
-      ? when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + (days > 1 ? ' · ' + when.toLocaleDateString('en-US', { weekday: 'short' }) : '')
-      : when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })));
+      ? when.toLocaleTimeString(LOCALE, { hour: 'numeric', minute: '2-digit' }) + (days > 1 ? ' · ' + when.toLocaleDateString(LOCALE, { weekday: 'short' }) : '')
+      : when.toLocaleDateString(LOCALE, { month: 'short', day: 'numeric' })));
     const dots = el('span', 'history-dots');
-    (entry.tracks || []).filter(Boolean).slice(0, 5).forEach(t => {
+    (entry.tracks || []).filter(Boolean).slice(0, 5).forEach(tr => {
       const dot = el('i', 'mood-dot');
-      dot.style.background = moodProfile(t.moodData?.mood).color;
-      dot.title = t.moodData?.mood || '';
+      dot.style.background = moodProfile(tr.moodData?.mood).color;
+      dot.title = tr.moodData?.mood || '';
       dots.append(dot);
     });
     meta.append(dots);
@@ -63,8 +64,8 @@ export function renderHistory(listEl, entries, activeId, { onOpen, onDelete }) {
 
     const del = el('button', 'history-delete', '×');
     del.type = 'button';
-    del.title = 'Delete entry';
-    del.setAttribute('aria-label', 'Delete entry: ' + entryTitle(entry));
+    del.title = t('deleteEntry');
+    del.setAttribute('aria-label', t('deleteEntryNamed', { title: entryTitle(entry) }));
     del.addEventListener('click', () => onDelete(entry));
 
     row.append(open, del);
@@ -108,15 +109,15 @@ export function renderCalendar(root, entries, month, activeId, { onPickDay, onMo
 
   root.replaceChildren();
   const head = el('div', 'cal-head');
-  const prev = el('button', 'cal-nav', '‹'); prev.type = 'button'; prev.setAttribute('aria-label', 'Previous month');
-  const next = el('button', 'cal-nav', '›'); next.type = 'button'; next.setAttribute('aria-label', 'Next month');
+  const prev = el('button', 'cal-nav', '‹'); prev.type = 'button'; prev.setAttribute('aria-label', t('prevMonth'));
+  const next = el('button', 'cal-nav', '›'); next.type = 'button'; next.setAttribute('aria-label', t('nextMonth'));
   prev.addEventListener('click', () => onMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1)));
   next.addEventListener('click', () => onMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1)));
-  head.append(prev, el('div', 'cal-title', month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })), next);
+  head.append(prev, el('div', 'cal-title', month.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' })), next);
   root.append(head);
 
   const grid = el('div', 'cal-grid');
-  ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(w => grid.append(el('div', 'cal-weekday', w)));
+  t('weekdays').split(',').forEach(w => grid.append(el('div', 'cal-weekday', w)));
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   for (let i = 0; i < first.getDay(); i++) grid.append(el('div', 'cal-blank'));
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
@@ -138,8 +139,8 @@ export function renderCalendar(root, entries, month, activeId, { onPickDay, onMo
       const dot = el('i', 'cal-dot');
       dot.style.background = moodColor(dayEntries[0]) || 'var(--accent1)';
       cell.append(dot);
-      const label = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      cell.setAttribute('aria-label', `${label}, ${dayEntries.length} entr${dayEntries.length === 1 ? 'y' : 'ies'}`);
+      const label = date.toLocaleDateString(LOCALE, { weekday: 'long', month: 'long', day: 'numeric' });
+      cell.setAttribute('aria-label', tn('dayEntries', dayEntries.length, { date: label }));
       cell.addEventListener('click', () => onPickDay(dayEntries[0]));
     } else {
       cell.disabled = true;
@@ -150,15 +151,15 @@ export function renderCalendar(root, entries, month, activeId, { onPickDay, onMo
 
   const streak = streakDays(entries);
   const stats = el('div', 'cal-stats');
-  stats.append(el('div', 'cal-stat', streak ? `${streak}-day streak` : 'Start your streak today'));
+  stats.append(el('div', 'cal-stat', streak ? tn('streak', streak) : t('startStreak')));
   const nextMilestone = STREAK_MILESTONES.find(m => m > streak);
-  if (nextMilestone) stats.append(el('div', 'cal-stat-sub', `next streak sound at ${nextMilestone} days`));
+  if (nextMilestone) stats.append(el('div', 'cal-stat-sub', t('nextStreakSound', { n: nextMilestone })));
   if (reachedMilestone(streak)) {
-    const mix = el('button', 'cal-streak-mix', '♫ play your streak mix');
+    const mix = el('button', 'cal-streak-mix', t('playYourStreakMix'));
     mix.type = 'button';
     mix.addEventListener('click', () => onStreak());
     stats.append(mix);
   }
-  stats.append(el('div', 'cal-stat-sub', `${monthCount} entr${monthCount === 1 ? 'y' : 'ies'} in ${month.toLocaleDateString('en-US', { month: 'long' })}`));
+  stats.append(el('div', 'cal-stat-sub', tn('entriesIn', monthCount, { month: month.toLocaleDateString(LOCALE, { month: 'long' }) })));
   root.append(stats);
 }

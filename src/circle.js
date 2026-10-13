@@ -3,6 +3,7 @@
 // family — the six chords that always harmonize with it — lights up with Roman numerals.
 
 import { playKeyPreview } from './audio.js';
+import { t, noteName } from './i18n.js';
 
 const MAJORS = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯', 'D♭', 'A♭', 'E♭', 'B♭', 'F'];
 const MINORS = ['Am', 'Em', 'Bm', 'F♯m', 'C♯m', 'G♯m', 'E♭m', 'B♭m', 'Fm', 'Cm', 'Gm', 'Dm'];
@@ -95,23 +96,24 @@ function render() {
   els.preview.disabled = !hasHome;
   const homeKey = hasHome ? keyAt(state.pos, state.minor) : null;
   els.hub.innerHTML = hasHome
-    ? `<span class="cof-hub-label">home</span><span class="cof-hub-key">${homeKey.name}${state.minor ? 'm' : ''}</span>`
-    : 'turn or tap';
+    ? `<span class="cof-hub-label">${t('cofHome')}</span><span class="cof-hub-key">${noteName(homeKey.name)}${state.minor ? 'm' : ''}</span>`
+    : t('cofTurnOrTap');
   els.dirBtns.forEach(b => b.classList.toggle('selected', +b.dataset.dir === state.dir));
 
   if (!hasHome) {
-    legend.textContent = 'Turn the wheel or tap a key to choose your home key. The rest of the circle fills in to show where your music goes next.';
+    legend.textContent = t('cofPick');
     return;
   }
   const home = keyAt(state.pos, state.minor);
-  const path = [0, 1, 2, 3].map(s => keyAt(state.pos + state.dir * s, state.minor).name + (state.minor ? 'm' : '')).join(' → ');
-  const fam = Object.keys(family).map(k => (k[0] === 'i' ? MINORS : MAJORS)[+k.slice(1)]).join(', ');
+  const path = [0, 1, 2, 3].map(s => noteName(keyAt(state.pos + state.dir * s, state.minor).name) + (state.minor ? 'm' : '')).join(' → ');
+  const fam = Object.keys(family).map(k => noteName((k[0] === 'i' ? MINORS : MAJORS)[+k.slice(1)])).join(', ');
+  const keyText = k => `${noteName(k.name)} ${state.minor ? t('minor') : t('major')}`;
   const next = keyAt(nextPos, state.minor);
   legend.innerHTML = '';
   [
-    `<strong>Home: ${home.name} ${state.minor ? 'minor' : 'major'}.</strong> Each paragraph moves one step around the circle (${path} …), so every paragraph flows into the next.`,
-    `<strong>Highlighted:</strong> your key family (${fam}), the chords that always harmonize with ${home.name}${state.minor ? 'm' : ''}.`,
-    `<strong>Next paragraph:</strong> ${next.name} ${state.minor ? 'minor' : 'major'}.`,
+    t('cofHomeLine', { key: keyText(home), path }),
+    t('cofFamilyLine', { family: fam, home: noteName(home.name) + (state.minor ? 'm' : '') }),
+    t('cofNextLine', { key: keyText(next) }),
   ].forEach(html => { const p = document.createElement('p'); p.innerHTML = html; legend.append(p); });
 }
 
@@ -155,8 +157,8 @@ function preview() {
     b.classList.toggle('sounding', pos !== null && b.dataset.ring === ring && +b.dataset.pos === pos));
   previewTimers = keys.map((_, s) => setTimeout(() => light(mod12(state.pos + state.dir * s)), 80 + s * 1000));
   previewTimers.push(setTimeout(() => light(null), 80 + keys.length * 1000));
-  els.preview.textContent = '♪ playing…';
-  previewTimers.push(setTimeout(() => { els.preview.textContent = '▶ hear your path · 5 sec'; }, keys.length * 1000 + 300));
+  els.preview.textContent = t('cofPlaying');
+  previewTimers.push(setTimeout(() => { els.preview.textContent = t('cofPreview'); }, keys.length * 1000 + 300));
 }
 
 function enableTurning(ring) {
@@ -219,15 +221,15 @@ function build(wrap) {
       btn.dataset.ring = minor ? 'i' : 'o';
       btn.style.left = (C + Math.cos(a) * r) + 'px';
       btn.style.top = (C + Math.sin(a) * r) + 'px';
-      btn.setAttribute('aria-label', label.replace('m', ' minor') + (minor ? '' : ' major'));
-      btn.innerHTML = `<span class="cof-name">${label}</span><span class="cof-num"></span><span class="cof-step"></span>`;
+      btn.setAttribute('aria-label', `${noteName(label.replace('m', ''))} ${minor ? t('minor') : t('major')}`);
+      btn.innerHTML = `<span class="cof-name">${noteName(minor ? label.slice(0, -1) : label)}${minor ? 'm' : ''}</span><span class="cof-num"></span><span class="cof-step"></span>`;
       btn.addEventListener('click', () => { if (!suppressClick) choose(pos, minor); });
       rotor.append(btn);
     });
   });
   const hub = document.createElement('div');
   hub.className = 'cof-hub';
-  hub.textContent = 'turn or tap';
+  hub.textContent = t('cofTurnOrTap');
   const marker = document.createElement('div');
   marker.className = 'cof-marker';
   marker.setAttribute('aria-hidden', 'true');

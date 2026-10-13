@@ -1,6 +1,7 @@
 // Color themes for the page, named after the moods. "sky" is the original blue;
 // "follow my mood" changes the page to each paragraph's mood color as you write.
 import { MOODS, isMood } from './moods.js';
+import { t, moodName } from './i18n.js';
 
 const STORE = 'tmf_theme';
 let current = 'sky';
@@ -65,7 +66,7 @@ function choose(name, save = true) {
   if (save) { try { localStorage.setItem(STORE, name); } catch (e) { /* not essential */ } }
   document.querySelectorAll('.theme-swatch').forEach(s => s.setAttribute('aria-pressed', s.dataset.theme === name ? 'true' : 'false'));
   const label = document.getElementById('theme-name');
-  if (label) label.textContent = name === 'sky' ? 'sky (original)' : name === 'follow' ? 'follow my mood — changes as you write' : name;
+  if (label) label.textContent = name === 'sky' ? t('themeSky') : name === 'follow' ? t('themeFollow') : moodName(name);
 }
 
 // Called whenever a paragraph's mood is shown
@@ -82,15 +83,15 @@ export function initThemes() {
     b.dataset.theme = name;
     b.style.background = background;
     b.title = title;
-    b.setAttribute('aria-label', 'Theme: ' + title);
+    b.setAttribute('aria-label', t('themeAria', { name: title }));
     b.addEventListener('click', () => choose(name));
     return b;
   };
   const moodColors = Object.values(MOODS).map(p => p.color);
   box.append(
-    make('sky', `linear-gradient(160deg, #9fcdf3, #ffffff)`, 'sky (original)'),
-    make('follow', `conic-gradient(${moodColors.join(', ')}, ${moodColors[0]})`, 'follow my mood'),
-    ...Object.values(MOODS).map(p => make(p.label, `linear-gradient(160deg, ${p.color}, ${mix(p.color, '#ffffff', 0.7)})`, p.label)),
+    make('sky', `linear-gradient(160deg, #9fcdf3, #ffffff)`, t('themeSky')),
+    make('follow', `conic-gradient(${moodColors.join(', ')}, ${moodColors[0]})`, t('themeFollowShort')),
+    ...Object.values(MOODS).map(p => make(p.label, `linear-gradient(160deg, ${p.color}, ${mix(p.color, '#ffffff', 0.7)})`, moodName(p.label))),
   );
   let saved = 'sky';
   try { saved = localStorage.getItem(STORE) || 'sky'; } catch (e) { /* default */ }

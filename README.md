@@ -35,13 +35,14 @@ Plain HTML, CSS and JavaScript (no framework) built with Vite, Capacitor for the
 
 ## Project Structure
 
-index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (the 15 mood profiles and detection), circle.js (the circle of fifths wheel), theme.js (the color themes), export.js (Word, PDF and WAV files, the streak mix and sharing), story.js (the story video), journal.js (saving entries safely), sidebar.js (the entry history, calendar and streaks) and styles.css (the sky design). vite.config.js adds the security policy to the built site. The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
+index.html is the page layout. The src/ folder holds the app code: main.js (the writing flow and interface), audio.js (the music engine), moods.js (the 15 mood profiles and detection), i18n.js (English and Spanish text), circle.js (the circle of fifths wheel), theme.js (the color themes), export.js (Word, PDF and WAV files, the streak mix and sharing), story.js (the story video), journal.js (saving entries safely), sidebar.js (the entry history, calendar and streaks) and styles.css (the sky design). vite.config.js adds the security policy to the built site. The ios/ folder is the native iPhone app project created with Capacitor. .github/workflows/deploy.yml builds and publishes the website on every push.
 
 ## Accessibility
 
 Built for older writers and people with low vision, and checked against WCAG 2.2 AA with axe-core (no violations on desktop or phone, in every color theme):
 
 - **Text size** buttons (normal, large, extra large) at the top, remembered between visits; browser zoom works too.
+- **Language:** English or Español (Central American Spanish, using "usted"). The whole app switches, including the instructions, messages, dates, moods, Do-Re-Mi note names, voice commands and downloads, and it starts in Spanish on Spanish-language devices.
 - **Font** choices under them: Claude serif and Claude sans (free look-alikes of Claude's reading and interface fonts: Source Serif 4 and Inter) and Easy-read (Atkinson Hyperlegible, designed by the Braille Institute for low vision). Tap the chosen one again for the original fonts.
 - Strong contrast: text and theme colors are darkened automatically until they're easy to read, and the page follows the device's "increase contrast" setting.
 - Every button, slider and menu has a name for screen readers; music, mood and progress updates are announced; the replay bars are real buttons.

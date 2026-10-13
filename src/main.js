@@ -13,7 +13,8 @@ import '@fontsource/inter/600.css';
 import '@fontsource/atkinson-hyperlegible/400.css';
 import '@fontsource/atkinson-hyperlegible/700.css';
 import './styles.css';
-import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeKey } from './moods.js';
+import { MOODS, MOOD_MEANINGS, DEFAULT_MOOD, moodProfile, analyzeMood, describeMood } from './moods.js';
+import { LANG, LOCALE, t, tn, setLang, translatePage, moodName, moodMeaning, reasonText, streakName } from './i18n.js';
 import { ctx, playMoodMusic, playStreakMusic, STREAK_SOUNDS, updateFx } from './audio.js';
 import {
   sessionParagraphs, sessionFilename, datedFilename, setSessionMeta, saveBlob, canShareFiles,
@@ -26,6 +27,8 @@ import { initCircle, keyForStep, setCircleStep } from './circle.js';
 import { initThemes, followMood, readable } from './theme.js';
 import { initVoice } from './voice.js';
 import { notesText, notesStarted, saveToNotes } from './notes.js';
+
+translatePage();
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -42,11 +45,11 @@ function showKeyStatus(text, cls = '') {
 }
 if (apiKey) {
   document.getElementById('api-key-input').value = apiKey;
-  showKeyStatus('Saved — Claude is reading the mood of your writing.', 'ok');
+  showKeyStatus(t('keySaved'), 'ok');
 }
 
 function showDate(date) {
-  document.getElementById('date-stamp').textContent = new Date(date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('date-stamp').textContent = new Date(date).toLocaleDateString(LOCALE,{weekday:'long',month:'long',day:'numeric'});
 }
 showDate(new Date());
 
@@ -70,12 +73,11 @@ function showAnalyzing(on) {
 function showMoodResult(moodData, key = null) {
   analyzingEl.classList.remove('visible');
   const p = moodProfile(moodData.mood);
-  moodBadge.textContent = p.label;
+  moodBadge.textContent = moodName(p.label);
   moodBadge.className = 'mood-badge visible';
   moodBadge.style.setProperty('--mood-color', readable(p.color));
   followMood(p.label);
-  const desc = key ? describeKey(p, key) + ' · ' + p.desc.split(' · ').slice(2).join(' · ') : p.desc;
-  moodParam.textContent = desc + (moodData.reason ? ` — "${moodData.reason}"` : '');
+  moodParam.textContent = describeMood(p, key) + (moodData.reason ? ` — “${reasonText(moodData.reason)}”` : '');
   moodParam.classList.add('visible');
 }
 
@@ -83,20 +85,20 @@ function showMoodResult(moodData, key = null) {
 function markPipDone(i, mood) {
   pips[i].classList.add('done');
   pips[i].disabled = false;
-  pips[i].title = `replay paragraph ${i+1} — ${mood}`;
-  pips[i].setAttribute('aria-label', `Replay paragraph ${i+1}, ${mood}`);
+  pips[i].title = t('pipReplayTitle', { n: i + 1, mood: moodName(mood) });
+  pips[i].setAttribute('aria-label', t('pipReplayLabel', { n: i + 1, mood: moodName(mood) }));
 }
 function resetPips() {
   pips.forEach((p, i) => {
     p.className = 'para-pip';
     p.disabled = true;
     p.removeAttribute('title');
-    p.setAttribute('aria-label', `Paragraph ${i+1}, not written yet`);
+    p.setAttribute('aria-label', t('pipEmpty', { n: i + 1 }));
   });
 }
 
 function updateRing(n) {
-  document.getElementById('ring-count').setAttribute('aria-label', `${n} of ${GOAL} paragraphs written`);
+  document.getElementById('ring-count').setAttribute('aria-label', t('ringLabel', { n, goal: GOAL }));
   ringEl.style.strokeDashoffset = 226 * (1 - n/GOAL);
   countEl.textContent = n;
   ringEl.style.stroke = ['var(--accent1)','var(--accent2)','var(--accent3)'][n-1];
@@ -129,7 +131,7 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   if (gen !== sessionGen) return;
   if (moodData.apiError) {
     // Don't fail silently: say why Claude wasn't used this time
-    showKeyStatus(`Claude wasn't used just now (${moodData.apiError}), so word matching picked the mood.`, 'err');
+    showKeyStatus(t('keyNotUsed', { why: moodData.apiError }), 'err');
     delete moodData.apiError;
   }
 
@@ -150,10 +152,10 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   notifEl.style.setProperty('--notif-color', profile.color);
   setWave(profile.color, true);
 
-  const msgs = ['♩ paragraph 1 unlocked','♩♩ paragraph 2 unlocked','♩♩♩ morning complete'];
-  notifTxt.textContent = edit ? `♩ paragraph ${index+1} updated`
-    : onGoal ? msgs[index] : (index === null ? '♩ new line' : `♩ paragraph ${index+1}`);
-  const titles = ['First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
+  const msgs = [t('unlocked1'), t('unlocked2'), t('unlocked3')];
+  notifTxt.textContent = edit ? t('paraUpdated', { n: index + 1 })
+    : onGoal ? msgs[index] : (index === null ? t('newLine') : t('paraN', { n: index + 1 }));
+  const titles = [t('title1'), t('title2'), t('title3')];
   if (onGoal && !edit) document.getElementById('progress-title').textContent = titles[index];
 
   // Paragraph 3 gets the finale; everything else cycles through the regular voicings
@@ -178,8 +180,8 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
     setWave(profile.color, false);
     notifEl.classList.remove('playing');
     notifTxt.textContent = completedCount < GOAL
-      ? (completedCount === 0 ? 'waiting for your first paragraph...' : `paragraph ${completedCount} done — ${GOAL-completedCount} to go`)
-      : (completedCount === GOAL ? 'goal reached — well done' : `${completedCount} paragraphs — keep going`);
+      ? (completedCount === 0 ? t('waiting') : t('paraDoneLeft', { n: completedCount, left: GOAL - completedCount }))
+      : (completedCount === GOAL ? t('goalReached') : t('keepGoing', { n: completedCount }));
   }, dur);
 }
 
@@ -207,24 +209,24 @@ let sessionTracks = [];   // per counted paragraph: { profile, musicIndex, moodD
 
 // Click a finished bar to replay that paragraph's music
 pips.forEach((pip, i) => pip.addEventListener('click', () => {
-  const t = sessionTracks[i];
-  if (!t) return;
-  showMoodResult(t.moodData, t.key);
+  const tr = sessionTracks[i];
+  if (!tr) return;
+  showMoodResult(tr.moodData, tr.key);
   notifEl.className = 'notif playing';
-  notifEl.style.setProperty('--notif-color', t.profile.color);
-  notifTxt.textContent = `♩ replaying paragraph ${i+1}`;
-  setWave(t.profile.color, true);
+  notifEl.style.setProperty('--notif-color', tr.profile.color);
+  notifTxt.textContent = t('replaying', { n: i + 1 });
+  setWave(tr.profile.color, true);
   const token = ++playToken;
-  playMoodMusic(t.profile, t.musicIndex, undefined, t.key || null);
-  setTimeout(() => { if (token === playToken) { setWave(t.profile.color, false); notifEl.classList.remove('playing'); } }, 3500);
+  playMoodMusic(tr.profile, tr.musicIndex, undefined, tr.key || null);
+  setTimeout(() => { if (token === playToken) { setWave(tr.profile.color, false); notifEl.classList.remove('playing'); } }, 3500);
 }));
 document.getElementById('writer').addEventListener('input', (e) => {
   const el = document.getElementById('writer');
   const text = el.value;
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
+  document.getElementById('word-count').textContent = tn('words', words);
   const paras = (text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
-  document.getElementById('para-count-meta').textContent = paras + ' paragraph' + (paras!==1?'s':'') + ' detected';
+  document.getElementById('para-count-meta').textContent = tn('detected', paras);
   // Some Android keyboards don't report insertLineBreak, so also check for a new newline at the caret
   const caret = el.selectionStart;
   const added = text.length - prevText.length;
@@ -273,8 +275,8 @@ document.querySelector('.mood-buttons').append(...Object.values(MOODS).map(p => 
   btn.type = 'button';
   btn.className = 'mood-btn';
   btn.dataset.mood = p.label;
-  btn.textContent = p.label;
-  btn.title = MOOD_MEANINGS[p.label] + ' — ' + p.desc;
+  btn.textContent = moodName(p.label);
+  btn.title = moodMeaning(p.label, MOOD_MEANINGS[p.label]) + ' — ' + describeMood(p);
   btn.style.setProperty('--mood-color', readable(p.color));
   return btn;
 }));
@@ -317,6 +319,19 @@ function setFont(font) {
   document.querySelectorAll('.font-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.font === font ? 'true' : 'false'));
   try { if (font) localStorage.setItem('tmf_font', font); else localStorage.removeItem('tmf_font'); } catch (e) { /* not essential */ }
 }
+// Language: English or Spanish. Save the writing, then reload in the new language on the same entry.
+document.querySelectorAll('.lang-btn').forEach(b => {
+  b.setAttribute('aria-pressed', b.dataset.lang === LANG ? 'true' : 'false');
+  b.addEventListener('click', async () => {
+    if (b.dataset.lang === LANG) return;
+    clearTimeout(saveTimer);
+    await persist();
+    try { if (currentId) sessionStorage.setItem('tmf_reopen', currentId); } catch (e) { /* not essential */ }
+    setLang(b.dataset.lang);
+    location.reload();
+  });
+});
+
 document.querySelectorAll('.font-btn').forEach(b => b.addEventListener('click', () =>
   setFont(document.documentElement.dataset.font === b.dataset.font ? null : b.dataset.font)));
 try { const f = localStorage.getItem('tmf_font'); if (['serif', 'sans', 'easy'].includes(f)) setFont(f); } catch (e) { /* default */ }
@@ -325,19 +340,19 @@ try { const ts = localStorage.getItem('tmf_text_size'); if (['1', '1.2', '1.4'].
 function saveApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
   if (!val || !val.startsWith('sk-')) {
-    showKeyStatus('That doesn\'t look like a Claude key — it should start with sk-ant-. Copy it again from console.anthropic.com.', 'err');
+    showKeyStatus(t('keyBad'), 'err');
     return;
   }
   apiKey = val;
   localStorage.setItem('pm_api_key', val);
-  showKeyStatus('Saved — Claude is reading the mood of your writing.', 'ok');
+  showKeyStatus(t('keySaved'), 'ok');
 }
 
 function removeApiKey() {
   apiKey = '';
   localStorage.removeItem('pm_api_key');
   document.getElementById('api-key-input').value = '';
-  showKeyStatus('Removed — back to word matching.');
+  showKeyStatus(t('keyRemoved'));
 }
 
 function toggleManualOverride(on) {
@@ -358,18 +373,18 @@ function clearSession() {
   titleEl.value = '';
   completedCount = 0; enterCount = 0; sessionTracks = []; prevText = '';
   resetPips();
-  document.getElementById('ring-count').setAttribute('aria-label', `0 of ${GOAL} paragraphs written`);
+  document.getElementById('ring-count').setAttribute('aria-label', t('ringLabel', { n: 0, goal: GOAL }));
   document.getElementById('pip-hint').classList.remove('visible');
   countEl.textContent = '0'; ringEl.style.strokeDashoffset = '226'; ringEl.style.stroke = 'var(--accent1)';
   setWave('var(--accent1)', false);
   notifEl.className = 'notif';
-  notifTxt.textContent = 'waiting for your first paragraph...';
+  notifTxt.textContent = t('waiting');
   moodBadge.className = 'mood-badge';
   moodParam.classList.remove('visible');
   analyzingEl.classList.remove('visible');
-  document.getElementById('progress-title').textContent = 'Start writing.';
-  document.getElementById('word-count').textContent = '0 words';
-  document.getElementById('para-count-meta').textContent = '0 paragraphs detected';
+  document.getElementById('progress-title').textContent = t('title0');
+  document.getElementById('word-count').textContent = tn('words', 0);
+  document.getElementById('para-count-meta').textContent = tn('detected', 0);
   document.getElementById('goal-banner').classList.remove('show');
   document.getElementById('finish-panel').classList.remove('show');
   setCircleStep(0);
@@ -419,7 +434,7 @@ async function persist() {
     text,
     completedCount,
     enterCount,
-    tracks: sessionTracks.map(t => t ? { musicIndex: t.musicIndex, moodData: t.moodData, key: t.key || null } : null),
+    tracks: sessionTracks.map(tr => tr ? { musicIndex: tr.musicIndex, moodData: tr.moodData, key: tr.key || null } : null),
   });
   renderSidebars();
 }
@@ -457,7 +472,7 @@ async function checkStreakMilestone(gen) {
     notifEl.className = 'notif playing';
     notifEl.style.setProperty('--notif-color', '#a77a1f');
     setWave('#d4a531', true);
-    notifTxt.textContent = `✦ ${streak}-day streak — ${STREAK_SOUNDS[streak].name}`;
+    notifTxt.textContent = t('streakNotif', { n: streak, name: streakName(STREAK_SOUNDS[streak].name) });
     setTimeout(() => { if (token === playToken) { setWave('#d4a531', false); notifEl.classList.remove('playing'); } }, 7000);
     openStreakPanel(streak);
   }, 5000);
@@ -476,7 +491,7 @@ let streakSource = null;     // the streak mix while it's playing
 
 function stopStreakMix() {
   if (streakSource) { try { streakSource.stop(); } catch (e) {} streakSource = null; }
-  streakEls.play.textContent = 'play streak mix';
+  streakEls.play.textContent = t('playStreakMix');
 }
 
 function openStreakPanel(streak) {
@@ -485,19 +500,19 @@ function openStreakPanel(streak) {
   stopStreakMix();
   const inStreak = streakEntries(entries);
   const paras = inStreak.reduce((n, e) => n + (e.tracks || []).filter(Boolean).length, 0);
-  streakEls.title.textContent = `✦ ${streak}-day streak · ${STREAK_SOUNDS[milestone].name}`;
+  streakEls.title.textContent = t('streakTitle', { n: streak, name: streakName(STREAK_SOUNDS[milestone].name) });
   streakEls.sub.textContent = paras > STREAK_MIX_MAX
-    ? `Your reward: your streak's frequencies in one piece — the latest ${STREAK_MIX_MAX} of your ${paras} paragraphs over ${streak} days — ending with your ${milestone}-day streak sound.`
-    : `Your reward: every frequency from your streak — ${paras} paragraph${paras !== 1 ? 's' : ''} over ${streak} days — in one piece, ending with your ${milestone}-day streak sound.`;
+    ? t('streakSubCapped', { max: STREAK_MIX_MAX, paras, days: streak, m: milestone })
+    : t('streakSub', { paras: tn('paras', paras), days: streak, m: milestone });
   const btns = [streakEls.play, streakEls.download, streakEls.share];
   btns.forEach(b => { b.disabled = true; });
-  streakEls.play.textContent = 'preparing...';
+  streakEls.play.textContent = t('preparing');
   streakMix = makeStreakWavBlob(inStreak, milestone, (done, total) => {
-    streakEls.play.textContent = `preparing... ${Math.round(done / total * 100)}%`;
+    streakEls.play.textContent = t('preparingPct', { p: Math.round(done / total * 100) });
   });
   streakMix
-    .then(() => { streakEls.play.textContent = 'play streak mix'; })
-    .catch(e => { console.error(e); streakEls.play.textContent = 'couldn\'t prepare the mix'; })
+    .then(() => { streakEls.play.textContent = t('playStreakMix'); })
+    .catch(e => { console.error(e); streakEls.play.textContent = t('mixFailed'); })
     .finally(() => btns.forEach(b => { b.disabled = false; }));
   streakEls.panel.classList.add('show');
   streakEls.panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -515,17 +530,17 @@ streakEls.play.addEventListener('click', async () => {
   src.onended = () => { if (streakSource === src) stopStreakMix(); };
   streakSource = src;
   src.start();
-  streakEls.play.textContent = 'stop';
+  streakEls.play.textContent = t('stop');
 });
 document.getElementById('streak-close').addEventListener('click', () => {
   stopStreakMix();
   streakEls.panel.classList.remove('show');
 });
-function streakFilename() { return datedFilename(new Date(), `${streakDays(entries)}-day streak mix`, 'wav'); }
+function streakFilename() { return datedFilename(new Date(), t('streakFile', { n: streakDays(entries) }), 'wav'); }
 streakEls.download.addEventListener('click', async () => saveBlob(await streakMix, streakFilename()));
 streakEls.share.addEventListener('click', async () => {
   try { await shareFile(await streakMix, streakFilename(), 'audio/wav'); }
-  catch (e) { if (e && e.name !== 'AbortError') alert('That didn\'t work — try download instead.'); }
+  catch (e) { if (e && e.name !== 'AbortError') alert(t('shareFailed')); }
 });
 
 async function startNewEntry() {
@@ -553,7 +568,7 @@ async function openEntry(entry) {
   completedCount = entry.completedCount || 0;
   enterCount = entry.enterCount || 0;
   setCircleStep(completedCount);
-  sessionTracks = (entry.tracks || []).map(t => t ? { ...t, profile: moodProfile(t.moodData?.mood) } : null);
+  sessionTracks = (entry.tracks || []).map(tr => tr ? { ...tr, profile: moodProfile(tr.moodData?.mood) } : null);
 
   // Restore progress: ring, bars (replayable), title, banner, counts
   const done = Math.min(completedCount, GOAL);
@@ -565,22 +580,22 @@ async function openEntry(entry) {
   }
   if (done) updateRing(done);
   if (sessionTracks.some(Boolean)) document.getElementById('pip-hint').classList.add('visible');
-  const titles = ['Start writing.','First paragraph done.','Two down. One more to go.','Morning frequency complete.'];
+  const titles = [t('title0'), t('title1'), t('title2'), t('title3')];
   document.getElementById('progress-title').textContent = titles[done];
   if (completedCount >= GOAL) document.getElementById('goal-banner').classList.add('show');
   const words = entry.text.trim().split(/\s+/).filter(Boolean).length;
-  document.getElementById('word-count').textContent = words + ' word' + (words!==1?'s':'');
+  document.getElementById('word-count').textContent = tn('words', words);
   const paras = (entry.text.match(/^[^\n]*\S[^\n]*\n/gm) || []).length;
-  document.getElementById('para-count-meta').textContent = paras + ' paragraph' + (paras!==1?'s':'') + ' detected';
+  document.getElementById('para-count-meta').textContent = tn('detected', paras);
   const isToday = dayKey(entry.createdAt) === dayKey(new Date());
-  notifTxt.textContent = isToday ? 'welcome back — keep writing' : 'reopened ' + new Date(entry.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric'}) + ' — click a bar to hear it';
+  notifTxt.textContent = isToday ? t('welcomeBack') : t('reopened', { date: new Date(entry.createdAt).toLocaleDateString(LOCALE, { month: 'long', day: 'numeric' }) });
   showDate(entry.createdAt);
   calMonth = new Date(new Date(entry.createdAt).getFullYear(), new Date(entry.createdAt).getMonth(), 1);
   renderSidebars();
 }
 
 async function removeEntry(entry) {
-  if (!confirm('Delete this entry? This can\'t be undone.')) return;
+  if (!confirm(t('confirmDelete'))) return;
   if (entry.id === currentId) {
     // Clear the page first, so a pending autosave can't bring the deleted entry back
     clearTimeout(saveTimer);
@@ -605,7 +620,7 @@ async function resetEntry() {
   const writer = document.getElementById('writer');
   const hasContent = writer.value.trim() || titleEl.value.trim() || completedCount > 0;
   if (!hasContent) { writer.focus(); return; }
-  if (!confirm('Start with a clean slate?\n\nThis erases this entry\'s writing, name and music. Your other entries aren\'t touched.')) return;
+  if (!confirm(t('confirmReset'))) return;
   clearTimeout(saveTimer);
   const id = currentId;
   clearSession();
@@ -613,7 +628,7 @@ async function resetEntry() {
   showDate(new Date());
   if (id) entries = await deleteEntry(id);
   renderSidebars();
-  notifTxt.textContent = 'clean slate — start writing whenever you\'re ready';
+  notifTxt.textContent = t('cleanSlate');
   writer.focus();
 }
 document.getElementById('clear-btn').addEventListener('click', resetEntry);
@@ -656,7 +671,7 @@ function prepareFiles() {
 
 function holdUntilReady(ids, promise) {
   const btns = ids.map(id => document.getElementById(id));
-  btns.forEach(b => { b.dataset.label = b.dataset.label || b.textContent; b.disabled = true; b.textContent = 'preparing...'; });
+  btns.forEach(b => { b.dataset.label = b.dataset.label || b.textContent; b.disabled = true; b.textContent = t('preparing'); });
   promise.finally(() => btns.forEach(b => { b.disabled = false; b.textContent = b.dataset.label; }));
 }
 
@@ -664,10 +679,10 @@ function wireButton(id, fn) {
   const btn = document.getElementById(id);
   btn.addEventListener('click', async () => {
     const label = btn.textContent;
-    btn.disabled = true; btn.textContent = 'preparing...';
+    btn.disabled = true; btn.textContent = t('preparing');
     try { await fn(); }
     catch (e) {
-      if (e && e.name !== 'AbortError') alert('That didn\'t work — check your internet connection and try again.');
+      if (e && e.name !== 'AbortError') alert(t('failedNet'));
     }
     finally { btn.disabled = false; btn.textContent = label; }
   });
@@ -698,46 +713,42 @@ function resetStory() {
   storyEls.result.classList.remove('show');
   storyEls.video.classList.remove('show'); storyEls.video.removeAttribute('src');
   storyEls.image.classList.remove('show'); storyEls.image.removeAttribute('src');
-  storyEls.make.textContent = 'make story video';
+  storyEls.make.textContent = t('makeStory');
 }
 
 // Editing the line after making the video means the video needs remaking
-storyEls.line.addEventListener('input', () => { if (story) { resetStory(); storyEls.make.textContent = 'remake story video'; } });
+storyEls.line.addEventListener('input', () => { if (story) { resetStory(); storyEls.make.textContent = t('remakeStory'); } });
 
 storyEls.make.addEventListener('click', async () => {
   resetStory();
   const gen = sessionGen;
   storyEls.make.disabled = true; storyEls.line.disabled = true;
-  storyEls.make.textContent = 'making your video...';
+  storyEls.make.textContent = t('makingStory');
   try {
-    const date = new Date(currentCreatedAt || Date.now()).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const date = new Date(currentCreatedAt || Date.now()).toLocaleDateString(LOCALE, { weekday: 'long', month: 'long', day: 'numeric' });
     const made = await makeStory(sessionTracks, {
       date,
       line: storyEls.line.value.trim(),
-      onProgress: p => { storyEls.make.textContent = `making your video... ${Math.round(p * 100)}%`; },
+      onProgress: p => { storyEls.make.textContent = t('makingStoryPct', { p: Math.round(p * 100) }); },
     });
-    if (gen !== sessionGen) { storyEls.make.textContent = 'make story video'; return; }   // switched entries meanwhile
+    if (gen !== sessionGen) { storyEls.make.textContent = t('makeStory'); return; }   // switched entries meanwhile
     story = { ...made, url: URL.createObjectURL(made.blob) };
     const isVideo = made.type.startsWith('video/');
     const preview = isVideo ? storyEls.video : storyEls.image;
     preview.src = story.url;
     preview.classList.add('show');
-    storyEls.download.textContent = isVideo ? 'download video' : 'download picture';
+    storyEls.download.textContent = isVideo ? t('downloadVideo') : t('downloadPicture');
     const canShare = canShareFiles([new File([made.blob], sessionFilename(made.ext), { type: made.type })]);
     storyEls.share.style.display = canShare ? '' : 'none';
-    storyEls.note.textContent = canShare
-      ? 'Tap "share to story", choose Instagram, TikTok or Facebook, then pick Story.'
-      : 'Download it, then post it to your story from your phone.';
-    if (!isVideo) storyEls.note.textContent += ' (This browser can\'t make videos, so you get a picture instead.)';
+    storyEls.note.textContent = canShare ? t('storyShareTip') : t('storyDownloadTip');
+    if (!isVideo) storyEls.note.textContent += t('storyPictureNote');
     storyEls.result.classList.add('show');
-    storyEls.make.textContent = 'remake story video';
+    storyEls.make.textContent = t('remakeStory');
     storyEls.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (e) {
     console.error(e);
-    storyEls.make.textContent = 'make story video';
-    alert(e && e.name === 'StoryInterrupted'
-      ? 'The video stopped because you left this screen. Keep the app open for the 20 seconds it takes, then tap make story video again.'
-      : 'Sorry, the video couldn\'t be made on this device. Try again, or use a different browser.');
+    storyEls.make.textContent = t('makeStory');
+    alert(e && e.name === 'StoryInterrupted' ? t('storyInterrupted') : t('storyFailed'));
   } finally {
     storyEls.make.disabled = false; storyEls.line.disabled = false;
   }
@@ -758,18 +769,17 @@ document.getElementById('finish-btn').addEventListener('click', () => {
   const paras = sessionParagraphs();
   if (!paras.length) {
     document.getElementById('writer').focus();
-    notifTxt.textContent = 'write something first, then finish your session';
+    notifTxt.textContent = t('writeFirst');
     return;
   }
   const words = paras.join(' ').split(/\s+/).filter(Boolean).length;
-  document.getElementById('finish-sub').textContent =
-    paras.length + ' paragraph' + (paras.length!==1?'s':'') + ', ' + words + ' word' + (words!==1?'s':'') + ' — download your writing and music, or save them to the cloud.';
+  document.getElementById('finish-sub').textContent = t('finishSub', { paras: tn('paras', paras.length), words: tn('words', words) });
   const hasMusic = sessionTracks.some(Boolean);
   document.getElementById('download-wav').disabled = !hasMusic;
   document.getElementById('share-music').disabled = !hasMusic;
   document.getElementById('finish-note').textContent = hasMusic
-    ? (document.querySelector('.share-btn.available') ? '"save to cloud / share" opens your device\'s share menu — iCloud Drive, Google Drive, Dropbox, email and more.' : '')
-    : 'No music yet — press Enter twice after a paragraph to create some.';
+    ? (document.querySelector('.share-btn.available') ? t('shareMenuNote') : '')
+    : t('noMusicYet');
   storyEls.section.classList.toggle('show', hasMusic);
   resetStory();
   syncMeta();
@@ -787,13 +797,11 @@ initVoice();
 // ─── Save to Apple Notes ──────────────────────────────────────────────────────
 const notesHelp = document.getElementById('notes-help');
 function showNotesHelp() {
-  notesHelp.textContent = notesStarted()
-    ? 'Tap the button, choose Notes, then tap where it says “New Note” and pick your Morning Frequency note. Today is added underneath, with its own date and title.'
-    : 'Tap the button and choose Notes to start your Morning Frequency note. On later days, pick that same note instead of “New Note” and each day is added underneath.';
+  notesHelp.textContent = notesStarted() ? t('notesLater') : t('notesFirst');
 }
 document.getElementById('save-notes').addEventListener('click', async () => {
   const btn = document.getElementById('save-notes');
-  const moods = [...new Set(sessionTracks.filter(Boolean).map(t => t.profile.label))];
+  const moods = [...new Set(sessionTracks.filter(Boolean).map(tr => moodName(tr.profile.label)))];
   const text = notesText({
     date: new Date(currentCreatedAt || Date.now()),
     title: titleEl.value.trim(),
@@ -803,11 +811,9 @@ document.getElementById('save-notes').addEventListener('click', async () => {
   btn.disabled = true;
   try {
     const how = await saveToNotes(text);
-    notesHelp.textContent = how === 'copied'
-      ? 'Copied. Open Notes, open your Morning Frequency note, tap at the very bottom and paste.'
-      : 'Sent. If you picked your Morning Frequency note, today is now at the bottom of it.';
+    notesHelp.textContent = how === 'copied' ? t('notesCopied') : t('notesSent');
   } catch (e) {
-    if (!e || e.name !== 'AbortError') notesHelp.textContent = 'That didn’t work. Try again, or use download pdf.';
+    if (!e || e.name !== 'AbortError') notesHelp.textContent = t('notesFailed');
   } finally {
     btn.disabled = false;
   }
@@ -815,8 +821,12 @@ document.getElementById('save-notes').addEventListener('click', async () => {
 
 (async () => {
   entries = await loadEntries();
+  // After a language switch, reopen the entry that was on screen
+  let reopenId = null;
+  try { reopenId = sessionStorage.getItem('tmf_reopen'); sessionStorage.removeItem('tmf_reopen'); } catch (e) { /* none */ }
+  const again = reopenId && entries.find(e => e.id === reopenId);
   const today = entries.find(e => dayKey(e.createdAt) === dayKey(new Date()));
-  if (today) await openEntry(today); else renderSidebars();
+  if (again || today) await openEntry(again || today); else renderSidebars();
 })();
 
 // Desktop: start with the cursor in the writing box. Phones: don't, or the keyboard

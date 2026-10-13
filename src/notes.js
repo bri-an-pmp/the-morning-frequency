@@ -3,6 +3,7 @@
 // note, and after that they pick that same note in the share menu.
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { t, LOCALE } from './i18n.js';
 
 const STARTED = 'tmf_notes_started';
 
@@ -12,12 +13,12 @@ export function notesStarted() {
 
 // date: Date; title: the entry name ('' if unnamed); paragraphs: [string]; moods: [string]
 export function notesText({ date, title, paragraphs, moods }) {
-  const day = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const day = date.toLocaleDateString(LOCALE, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const lines = [];
   if (!notesStarted()) lines.push('The Morning Frequency', '');   // the new note's title, the first time only
   lines.push('━━━━━━━━━━━━━━━━', day);
   if (title) lines.push(title);
-  if (moods.length) lines.push('Moods: ' + moods.join(' · '));
+  if (moods.length) lines.push(t('notesMoods') + ': ' + moods.join(' · '));
   lines.push('', paragraphs.join('\n\n'), '');
   return lines.join('\n');
 }
@@ -25,7 +26,7 @@ export function notesText({ date, title, paragraphs, moods }) {
 // Returns 'shared' or 'copied'. Throws AbortError if the writer closes the share menu.
 export async function saveToNotes(text) {
   if (Capacitor.isNativePlatform()) {
-    await Share.share({ text, dialogTitle: 'Save to Apple Notes' });
+    await Share.share({ text, dialogTitle: t('notesDialog') });
   } else if (navigator.share) {
     await navigator.share({ text });
   } else {

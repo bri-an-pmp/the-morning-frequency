@@ -555,7 +555,7 @@ h1.logo { margin: 0; font-weight: 400; }
 :root[data-font="serif"] { --font-ui: 'Source Serif 4', Georgia, serif; --font-write: 'Source Serif 4', Georgia, serif; }
 :root[data-font="sans"]  { --font-ui: 'Inter', system-ui, sans-serif; --font-write: 'Inter', system-ui, sans-serif; }
 :root[data-font="easy"]  { --font-ui: 'Atkinson Hyperlegible', sans-serif; --font-write: 'Atkinson Hyperlegible', sans-serif; --font-label: 'Atkinson Hyperlegible', sans-serif; }
-.font-choice { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.font-choice, .lang-choice { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .font-btn { min-height: 40px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-size: calc(14px * var(--ts, 1)); cursor: pointer; }
 .font-btn[data-font="serif"] { font-family: 'Source Serif 4', Georgia, serif; }
 .font-btn[data-font="sans"] { font-family: 'Inter', system-ui, sans-serif; }
@@ -571,3 +571,12 @@ h1.logo { margin: 0; font-weight: 400; }
 .voice-status { padding: 10px 14px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border2); }
 .voice-status.heard { border-color: var(--accent1); }
 @media (pointer: coarse) { .voice-option { min-height: 44px; } }
+
+/* Language buttons (under the font buttons) */
+.lang-btn { min-height: 40px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-size: calc(14px * var(--ts, 1)); cursor: pointer; }
+.lang-btn[aria-pressed="true"] { background: var(--accent1); border-color: var(--accent1); color: #fff; }
+@media (max-width: 600px) { .lang-choice { justify-content: flex-start; } }
+@media (pointer: coarse) { .lang-btn { min-height: 44px; } }
+/* Spanish note names (Sol♯m, Si♭m) are longer: a little smaller on the wheel */
+:root[data-lang="es"] .cof-key.minor { font-size: 11px; }
+:root[data-lang="es"] .cof-key { font-size: 14px; }

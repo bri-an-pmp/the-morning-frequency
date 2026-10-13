@@ -1,3 +1,5 @@
+import { LANG, t, noteName, qualityText, styleText } from './i18n.js';
+
 // ─── Mood profiles ────────────────────────────────────────────────────────────
 export const MOODS = {
   joyful:      { label:'joyful',      root:'C',  tempoBase:138, energy:0.85, valence:0.9,  color:'#a77a1f', desc:'C major · 138bpm · bright arpeggios',   scale:[0,2,4,7,9,12],       chord:[0,4,7,12],  pad:[0,7]     },
@@ -62,7 +64,7 @@ function claudeCallAllowed() {
 export async function analyzeMood(text, apiKey) {
   if (!apiKey) return heuristicMood(text);
   if (!claudeCallAllowed()) {
-    return { ...heuristicMood(text), apiError: `today's safety limit of ${DAILY_CLAUDE_LIMIT} Claude checks was reached; it resets tomorrow` };
+    return { ...heuristicMood(text), apiError: t('whyDaily', { n: DAILY_CLAUDE_LIMIT }) };
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
@@ -90,13 +92,13 @@ ${text.trim().slice(0,600).replace(/<\/?paragraph>/gi, '')}
 Pick the single best mood from this list (the paragraph may be in any language):
 ${Object.entries(MOOD_MEANINGS).map(([m, d]) => `- ${m}: ${d}`).join('\n')}
 
-Format: {"mood":"<one of the moods above, spelled exactly>","energy":<0.0-1.0>,"valence":<0.0-1.0>,"reason":"<3-5 words>"}`
+Format: {"mood":"<one of the moods above, spelled exactly>","energy":<0.0-1.0>,"valence":<0.0-1.0>,"reason":"<3-5 words${LANG === 'es' ? ', in Spanish' : ''}>"}`
         }]
       })
     });
     if (!res.ok) {
-      const why = res.status === 401 ? 'the key was rejected' : res.status === 400 || res.status === 402 ? 'the account may be out of credit'
-        : res.status === 429 ? 'too many requests right now' : 'Claude is unavailable right now';
+      const why = res.status === 401 ? t('whyRejected') : res.status === 400 || res.status === 402 ? t('whyCredit')
+        : res.status === 429 ? t('whyBusy') : t('whyDown');
       return { ...heuristicMood(text), apiError: why };
     }
     const data = await res.json();
@@ -112,49 +114,56 @@ Format: {"mood":"<one of the moods above, spelled exactly>","energy":<0.0-1.0>,"
     };
   } catch(e) {
     console.warn('API mood failed, using heuristic', e);
-    return { ...heuristicMood(text), apiError: e && e.name === 'AbortError' ? 'Claude took too long to answer' : 'there was no connection to Claude' };
+    return { ...heuristicMood(text), apiError: e && e.name === 'AbortError' ? t('whySlow') : t('whyOffline') };
   } finally {
     clearTimeout(timer);
   }
 }
 
 export function heuristicMood(text) {
-  const t = text.toLowerCase();
+  const lower = text.toLowerCase();
   const signals = {
-    joyful:      ['happy','joy','laugh','excit','wonderful','amazing','fun','great'],
-    melancholic: ['sad','grief','loss','mourn','depress','alone','lonely','miss','pain','sorrow'],
-    tense:       ['stress','anxious','urgent','deadline','panic','crisis','fear','worry','danger'],
-    hopeful:     ['hope','future','will','plan','goal','promis','better','progress','forward'],
-    reflective:  ['think','wonder','ponder','reflect','consider','maybe','perhaps','memory','remem'],
-    analytical:  ['because','therefore','data','result','analysis','research','evidence','conclu'],
-    nostalgic:   ['used to','back when','remember','years ago','childhood','old','once','then'],
-    grateful:    ['grateful','gratitude','thankful','thank','bless','appreciat','gracias'],
-    groovy:      ['groove','funk','danc','rhythm','beat','vibe','moving','jam','music'],
-    loving:      ['love','lover','heart','kiss','partner','husband','wife','romance','adore','darling','te quiero','amor'],
-    celebratory: ['celebrat','party','victory','promotion','birthday','congrat','cheers','finally','we did it','nailed'],
-    dreamy:      ['dream','imagine','float','cloud','wish','fantas','drift','magic','wonder if','someday'],
+    joyful:      ['happy','joy','laugh','excit','wonderful','amazing','fun','great', 'content','risa','divertid','maravill','genial','tuanis','chiva','chilero'],
+    melancholic: ['sad','grief','loss','mourn','depress','alone','lonely','miss','pain','sorrow', 'triste','dolor','soledad','me siento sol','extraño','extraña','pena','llor','duelo','pérdida','perdí','luto'],
+    tense:       ['stress','anxious','urgent','deadline','panic','crisis','fear','worry','danger', 'estrés','estres','ansi','urgente','pánico','panico','miedo','preocup','nervios','presión','afligid'],
+    hopeful:     ['hope','future','will','plan','goal','promis','better','progress','forward', 'esperanza','futuro','ojalá','ojala','planes','mejor','adelante','progreso','lograr'],
+    reflective:  ['think','wonder','ponder','reflect','consider','maybe','perhaps','memory','remem', 'pienso','pensar','me pregunto','reflexion','tal vez','quizás','quizas'],
+    analytical:  ['because','therefore','data','result','analysis','research','evidence','conclu', 'porque','por lo tanto','datos','resultado','análisis','analisis','investiga','evidencia'],
+    nostalgic:   ['used to','back when','remember','years ago','childhood','old','once','then', 'recuerdo','cuando era','hace años','infancia','niñez','de niño','de niña'],
+    grateful:    ['grateful','gratitude','thankful','thank','bless','appreciat','gracias', 'agradec','bendici','bendec'],
+    groovy:      ['groove','funk','danc','rhythm','beat','vibe','moving','jam','music', 'ritmo','música','musica','marimba','cumbia','salsa','bailar'],
+    loving:      ['love','lover','heart','kiss','partner','husband','wife','romance','adore','darling','te quiero','amor', 'te amo','corazón','beso','esposo','esposa','novio','novia','pareja','enamor'],
+    celebratory: ['celebrat','party','victory','promotion','birthday','congrat','cheers','finally','we did it','nailed', 'celebr','cumpleaños','ganamos','victoria','ascenso','felicidades','por fin','lo logr'],
+    dreamy:      ['dream','imagine','float','cloud','wish','fantas','drift','magic','wonder if','someday', 'sueño','soñ','imagin','flot','nube','deseo','magia','algún día','algun dia'],
     'alegría':   ['alegr','feliz','fiesta','baila','bonit','olé','que bien','qué bien','vida'],
     duende:      ['duende','passion','pasión','fuego','fire','intens','raw','alma','soul','ache'],
-    ternura:     ['tender','gentle','ternura','cariño','abrazo','hug','baby','little one','mamá','mom','cuddl'],
+    ternura:     ['tender','gentle','ternura','cariño','abrazo','hug','baby','little one','mamá','mom','cuddl', 'bebé','hijit','abuel','tiern','chiquit'],
   };
   const scores = {};
   for (const [mood, words] of Object.entries(signals)) {
-    scores[mood] = words.filter(w => t.includes(w)).length;
+    scores[mood] = words.filter(w => lower.includes(w)).length;
   }
   const top = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
   if (top[1] === 0) {
     // No clear words: an exclamation sounds like celebrating, a question like reflecting
-    const mood = /!/.test(t) ? 'celebratory' : /\?/.test(t) ? 'reflective' : DEFAULT_MOOD;
+    const mood = /!/.test(lower) ? 'celebratory' : /\?/.test(lower) ? 'reflective' : DEFAULT_MOOD;
     return { mood, energy:MOODS[mood].energy, valence:MOODS[mood].valence, reason:'no strong signal' };
   }
   const p = MOODS[top[0]];
   return { mood:top[0], energy:p.energy, valence:p.valence, reason:'keyword match' };
 }
 
-// "C major · 138bpm" — or, with a circle-of-fifths key, that key with the mood's tempo
+// "C major · 138bpm" — or, with a circle-of-fifths key, that key with the mood's tempo.
+// In Spanish: "Do mayor · 138 ppm".
 export function describeKey(profile, key) {
-  const parts = profile.desc.split(' · ');
-  if (!key) return parts.slice(0, 2).join(' · ');
-  const quality = key.minor ? 'minor' : parts[0].split(' ').slice(1).join(' ');
-  return `${key.name} ${quality} · ${parts[1]}`;
+  const [keyPart, bpm] = profile.desc.split(' · ');
+  const [root, ...q] = keyPart.split(' ');
+  const quality = key && key.minor ? 'minor' : q.join(' ');
+  const tempo = LANG === 'es' ? bpm.replace('bpm', ' ppm') : bpm;
+  return `${noteName(key ? key.name : root)} ${qualityText(quality)} · ${tempo}`;
+}
+// The full description, including the style of the music
+export function describeMood(profile, key = null) {
+  const style = profile.desc.split(' · ').slice(2).join(' · ');
+  return describeKey(profile, key) + (style ? ' · ' + styleText(style) : '');
 }
