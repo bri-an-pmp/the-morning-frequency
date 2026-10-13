@@ -199,6 +199,10 @@
   <div class="enter-hint">↵ ↵ &nbsp;Press Enter (return) twice to hear your frequency and start a new paragraph.</div>
   <input class="entry-title" id="entry-title" type="text" maxlength="80" autocomplete="off"
     placeholder="Name this entry (optional)" aria-label="Entry name">
+  <div class="voice-row">
+    <button type="button" class="voice-btn" id="voice-btn" aria-pressed="false">🎤 speak instead of typing</button>
+    <p class="voice-status" id="voice-status" role="status" aria-live="polite" hidden></p>
+  </div>
   <div class="editor-wrap">
     <textarea id="writer"
       placeholder="Write a paragraph here, then press Enter (return) twice..."
@@ -245,7 +249,9 @@
       <button class="reset-btn" id="download-docx">download word (.docx)</button>
       <button class="reset-btn" id="download-pdf">download pdf</button>
       <button class="reset-btn share-btn" id="share-writing">save to cloud / share</button>
+      <button class="reset-btn" id="save-notes">save to Apple Notes</button>
     </div>
+    <p class="finish-note notes-help" id="notes-help" role="status" aria-live="polite"></p>
     <div class="finish-row-label">your music</div>
     <div class="finish-buttons">
       <button class="reset-btn" id="download-wav">download audio (.wav)</button>

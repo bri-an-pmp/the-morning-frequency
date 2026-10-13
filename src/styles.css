@@ -507,3 +507,12 @@ input.entry-title:focus { outline: none; border-bottom-color: var(--accent1); }
 .cof-preview:disabled { opacity: 0.45; cursor: default; }
 .cof-hub-label { display: block; }
 .cof-hub-key { display: block; font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: 0; text-transform: none; color: var(--accent1); margin-top: 2px; }
+
+/* Speak instead of typing */
+.voice-row { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; }
+.voice-btn { align-self: flex-start; min-height: 48px; padding: 10px 20px; border-radius: 999px; border: 2px solid var(--accent1); background: var(--surface2); color: var(--accent1); font-family: 'Nunito', sans-serif; font-size: 17px; font-weight: 600; cursor: pointer; }
+.voice-btn:hover { background: #fff; }
+.voice-btn.listening { background: #c04b44; border-color: #c04b44; color: #fff; animation: voicePulse 1.6s ease-in-out infinite; }
+@keyframes voicePulse { 50% { box-shadow: 0 0 0 8px rgba(192, 75, 68, 0.18); } }
+.voice-status { font-size: 15px; line-height: 1.5; color: var(--text); }
+.notes-help { font-size: 13px; margin-top: 8px; }

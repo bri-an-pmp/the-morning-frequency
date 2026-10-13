@@ -16,6 +16,8 @@ import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilest
 import { makeStory } from './story.js';
 import { initCircle, keyForStep, setCircleStep } from './circle.js';
 import { initThemes, followMood } from './theme.js';
+import { initVoice } from './voice.js';
+import { notesText, notesStarted, saveToNotes } from './notes.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
@@ -714,6 +716,7 @@ document.getElementById('finish-btn').addEventListener('click', () => {
   storyEls.section.classList.toggle('show', hasMusic);
   resetStory();
   syncMeta();
+  showNotesHelp();
   prepareFiles();
   const panel = document.getElementById('finish-panel');
   panel.classList.add('show');
@@ -722,6 +725,36 @@ document.getElementById('finish-btn').addEventListener('click', () => {
 
 initCircle();
 initThemes();
+initVoice();
+
+// ─── Save to Apple Notes ──────────────────────────────────────────────────────
+const notesHelp = document.getElementById('notes-help');
+function showNotesHelp() {
+  notesHelp.textContent = notesStarted()
+    ? 'Tap the button, choose Notes, then tap where it says “New Note” and pick your Morning Frequency note. Today is added underneath, with its own date and title.'
+    : 'Tap the button and choose Notes to start your Morning Frequency note. On later days, pick that same note instead of “New Note” and each day is added underneath.';
+}
+document.getElementById('save-notes').addEventListener('click', async () => {
+  const btn = document.getElementById('save-notes');
+  const moods = [...new Set(sessionTracks.filter(Boolean).map(t => t.profile.label))];
+  const text = notesText({
+    date: new Date(currentCreatedAt || Date.now()),
+    title: titleEl.value.trim(),
+    paragraphs: sessionParagraphs(),
+    moods,
+  });
+  btn.disabled = true;
+  try {
+    const how = await saveToNotes(text);
+    notesHelp.textContent = how === 'copied'
+      ? 'Copied. Open Notes, open your Morning Frequency note, tap at the very bottom and paste.'
+      : 'Sent. If you picked your Morning Frequency note, today is now at the bottom of it.';
+  } catch (e) {
+    if (!e || e.name !== 'AbortError') notesHelp.textContent = 'That didn’t work. Try again, or use download pdf.';
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 (async () => {
   entries = await loadEntries();
