@@ -3,6 +3,7 @@ import { playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import { moodProfile } from './moods.js';
 import { LOCALE } from './i18n.js';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 // Inside the iPhone app there are no browser downloads: files are saved to the app's cache and
 // handed to Apple's share sheet, which offers Save to Files, AirDrop, Mail, Messages, Notes…
@@ -18,7 +19,7 @@ function blobToBase64(blob) {
 }
 
 async function nativeShareFile(blob, filename) {
-  const [{ Filesystem, Directory }, { Share }] = await Promise.all([import('@capacitor/filesystem'), import('@capacitor/share')]);
+  const { Filesystem, Directory } = await import('@capacitor/filesystem');
   const { uri } = await Filesystem.writeFile({ path: filename, data: await blobToBase64(blob), directory: Directory.Cache });
   try {
     await Share.share({ files: [uri], dialogTitle: filename });

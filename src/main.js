@@ -135,7 +135,7 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   } else if (index === null) {
     // A blank-line Enter replays the latest paragraph's mood — no need to ask Claude (or pay) again
     const last = sessionTracks.filter(Boolean).pop();
-    moodData = last ? { ...last.moodData, reason: 'blank line' }
+    moodData = last ? { ...last.moodData }
       : { mood:DEFAULT_MOOD, energy:MOODS[DEFAULT_MOOD].energy, valence:MOODS[DEFAULT_MOOD].valence, reason:'blank line' };
   } else {
     moodData = await analyzeMood(paraText, apiKey);
