@@ -2,6 +2,31 @@
 import { playMoodMusic, playStreakMusic, STREAK_SOUNDS } from './audio.js';
 import { moodProfile } from './moods.js';
 import { LOCALE } from './i18n.js';
+import { Capacitor } from '@capacitor/core';
+
+// Inside the iPhone app there are no browser downloads: files are saved to the app's cache and
+// handed to Apple's share sheet, which offers Save to Files, AirDrop, Mail, Messages, Notes…
+export const NATIVE = Capacitor.isNativePlatform();
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function nativeShareFile(blob, filename) {
+  const [{ Filesystem, Directory }, { Share }] = await Promise.all([import('@capacitor/filesystem'), import('@capacitor/share')]);
+  const { uri } = await Filesystem.writeFile({ path: filename, data: await blobToBase64(blob), directory: Directory.Cache });
+  try {
+    await Share.share({ files: [uri], dialogTitle: filename });
+  } catch (e) {
+    // Closing the share sheet isn't an error
+    if (!/cancel/i.test(String(e && (e.message || e)))) throw e;
+  }
+}
 
 export function sessionParagraphs() {
   return document.getElementById('writer').value.split('\n').map(p => p.trim()).filter(Boolean);
@@ -34,6 +59,7 @@ export function sessionFilename(ext) {
 }
 
 export function saveBlob(blob, filename) {
+  if (NATIVE) return nativeShareFile(blob, filename);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -169,10 +195,12 @@ export async function makeWavBlob(sessionTracks) {
 }
 
 export function canShareFiles(files) {
+  if (NATIVE) return true;
   try { return !!(navigator.canShare && navigator.canShare({ files })); } catch (e) { return false; }
 }
 
 export async function shareFile(blob, filename, type) {
+  if (NATIVE) return nativeShareFile(blob, filename);
   const files = [new File([blob], filename, { type })];
   if (!canShareFiles(files)) { saveBlob(blob, filename); return; }
   await navigator.share({ files, title: 'The Morning Frequency' });

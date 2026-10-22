@@ -23,18 +23,30 @@ import {
 import { loadEntries, saveEntry, deleteEntry, newEntryId, dayKey } from './journal.js';
 import { renderHistory, renderCalendar, streakDays, streakEntries, reachedMilestone } from './sidebar.js';
 import { makeStory } from './story.js';
+import { NATIVE } from './export.js';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+
+// A gentle tap on the phone when a paragraph is counted, and a celebration buzz for streaks
+function buzz(kind) {
+  if (!NATIVE) return;
+  const done = kind === 'streak' ? Haptics.notification({ type: NotificationType.Success }) : Haptics.impact({ style: ImpactStyle.Light });
+  done.catch(() => {});
+}
 import { initCircle, keyForStep, setCircleStep } from './circle.js';
 import { initThemes, followMood, readable } from './theme.js';
 import { initVoice } from './voice.js';
 import { notesText, notesStarted, saveToNotes } from './notes.js';
 
 translatePage();
+// The iPhone app doesn't offer the optional Claude key (App Store rules on buying from another
+// company); mood detection there uses word matching. The website keeps the option.
+if (NATIVE) { const ai = document.querySelector('.ai-mood'); if (ai) ai.hidden = true; }
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let completedCount = 0;
 let isManualOverride = false;
 let manualMood = null;
-let apiKey = localStorage.getItem('pm_api_key') || '';
+let apiKey = NATIVE ? '' : (localStorage.getItem('pm_api_key') || '');
 const GOAL = 3;
 
 function showKeyStatus(text, cls = '') {
@@ -170,7 +182,7 @@ async function triggerReward(paraText, index, playIndex, edit = false) {
   }
   const token = ++playToken;
   playMoodMusic(profile, musicIndex, undefined, key);
-  if (index !== null && !edit) checkStreakMilestone(gen);
+  if (index !== null && !edit) { buzz('paragraph'); checkStreakMilestone(gen); }
 
   if (index === 2 && !edit) setTimeout(() => document.getElementById('goal-banner').classList.add('show'), 900);
 
@@ -469,6 +481,7 @@ async function checkStreakMilestone(gen) {
   setTimeout(() => {
     const token = ++playToken;
     playStreakMusic(streak);
+    buzz('streak');
     notifEl.className = 'notif playing';
     notifEl.style.setProperty('--notif-color', '#a77a1f');
     setWave('#d4a531', true);
@@ -754,10 +767,7 @@ storyEls.make.addEventListener('click', async () => {
   }
 });
 
-wireButton('share-story', async () => {
-  const files = [new File([story.blob], sessionFilename(story.ext), { type: story.type })];
-  await navigator.share({ files });
-});
+wireButton('share-story', async () => shareFile(story.blob, sessionFilename(story.ext), story.type));
 wireButton('download-story', async () => saveBlob(story.blob, sessionFilename(story.ext)));
 
 // Show "save to cloud / share" only where the device has a share menu that accepts files
